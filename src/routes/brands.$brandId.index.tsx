@@ -173,7 +173,7 @@ function SourcesAndGaps() {
   const openGaps = (gaps.data ?? []).filter((g) => !g.resolved);
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
+    <div className="grid gap-16 lg:grid-cols-[1.2fr_1fr]">
       <section>
         <h2 className="text-2xl">Brand materials</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -181,7 +181,7 @@ function SourcesAndGaps() {
           SVG logos or pasted text. Up to {MAX_FILES_PER_PASS} files at a time, 25 MB each.
         </p>
 
-        <div className="mt-5 rounded-lg border border-border bg-card p-5">
+        <div className="mt-5 surface p-6">
           <div className="grid gap-1.5">
             <Label>What is this material?</Label>
             <Select value={classification} onValueChange={setClassification}>
@@ -248,7 +248,7 @@ function SourcesAndGaps() {
           {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
         </div>
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-8 space-y-4">
           {(sources.data ?? []).length === 0 ? (
             <Empty
               title="No materials yet"
@@ -256,7 +256,7 @@ function SourcesAndGaps() {
             />
           ) : (
             (sources.data ?? []).map((source) => (
-              <div key={source.id} className="rounded-lg border border-border bg-card p-4">
+              <div key={source.id} className="surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{source.file_name}</p>
@@ -316,7 +316,7 @@ function SourcesAndGaps() {
           answered — CoBrand will not guess.
         </p>
 
-        <div className="mt-5 space-y-3">
+        <div className="mt-7 space-y-4">
           {openGaps.length === 0 ? (
             <Empty
               title="Nothing outstanding"
@@ -324,7 +324,7 @@ function SourcesAndGaps() {
             />
           ) : (
             openGaps.map((gap) => (
-              <div key={gap.id} className="rounded-lg border border-border bg-card p-4">
+              <div key={gap.id} className="surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-medium">{gap.topic}</p>
                   <StateBadge state={gap.gap_type} />
