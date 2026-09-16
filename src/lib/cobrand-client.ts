@@ -169,3 +169,21 @@ export async function createSourceFromText(
   if (error) throw error;
   return data.id;
 }
+
+export type ProposedEdit = {
+  action: "update" | "add" | "archive";
+  rule_id: string | null;
+  label: string;
+  field: string;
+  old_value: string | null;
+  new_value: string;
+  layer: string;
+  rule_type: string;
+  severity: string;
+};
+
+export type ProposedEdits = {
+  understood: string;
+  changes: ProposedEdit[];
+  question: string | null;
+};
