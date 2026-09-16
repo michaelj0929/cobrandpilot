@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BrandsBrandIdRouteImport } from './routes/brands.$brandId'
 import { Route as BrandsBrandIdIndexRouteImport } from './routes/brands.$brandId.index'
 import { Route as BrandsBrandIdBrainRouteImport } from './routes/brands.$brandId.brain'
+import { Route as BrandsBrandIdReviewRouteImport } from './routes/brands.$brandId.review'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,16 +35,23 @@ const BrandsBrandIdBrainRoute = BrandsBrandIdBrainRouteImport.update({
   path: '/brain',
   getParentRoute: () => BrandsBrandIdRoute,
 } as any)
+const BrandsBrandIdReviewRoute = BrandsBrandIdReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => BrandsBrandIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brands/$brandId': typeof BrandsBrandIdRouteWithChildren
   '/brands/$brandId/brain': typeof BrandsBrandIdBrainRoute
+  '/brands/$brandId/review': typeof BrandsBrandIdReviewRoute
   '/brands/$brandId/': typeof BrandsBrandIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brands/$brandId/brain': typeof BrandsBrandIdBrainRoute
+  '/brands/$brandId/review': typeof BrandsBrandIdReviewRoute
   '/brands/$brandId': typeof BrandsBrandIdIndexRoute
 }
 export interface FileRoutesById {
@@ -51,19 +59,29 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/brands/$brandId': typeof BrandsBrandIdRouteWithChildren
   '/brands/$brandId/brain': typeof BrandsBrandIdBrainRoute
+  '/brands/$brandId/review': typeof BrandsBrandIdReviewRoute
   '/brands/$brandId/': typeof BrandsBrandIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/brands/$brandId' | '/brands/$brandId/brain' | '/brands/$brandId/'
+    | '/'
+    | '/brands/$brandId'
+    | '/brands/$brandId/brain'
+    | '/brands/$brandId/review'
+    | '/brands/$brandId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/brands/$brandId/brain' | '/brands/$brandId'
+  to:
+    | '/'
+    | '/brands/$brandId/brain'
+    | '/brands/$brandId/review'
+    | '/brands/$brandId'
   id:
     | '__root__'
     | '/'
     | '/brands/$brandId'
     | '/brands/$brandId/brain'
+    | '/brands/$brandId/review'
     | '/brands/$brandId/'
   fileRoutesById: FileRoutesById
 }
@@ -102,16 +120,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrandsBrandIdBrainRouteImport
       parentRoute: typeof BrandsBrandIdRoute
     }
+    '/brands/$brandId/review': {
+      id: '/brands/$brandId/review'
+      path: '/review'
+      fullPath: '/brands/$brandId/review'
+      preLoaderRoute: typeof BrandsBrandIdReviewRouteImport
+      parentRoute: typeof BrandsBrandIdRoute
+    }
   }
 }
 
 interface BrandsBrandIdRouteChildren {
   BrandsBrandIdBrainRoute: typeof BrandsBrandIdBrainRoute
+  BrandsBrandIdReviewRoute: typeof BrandsBrandIdReviewRoute
   BrandsBrandIdIndexRoute: typeof BrandsBrandIdIndexRoute
 }
 
 const BrandsBrandIdRouteChildren: BrandsBrandIdRouteChildren = {
   BrandsBrandIdBrainRoute: BrandsBrandIdBrainRoute,
+  BrandsBrandIdReviewRoute: BrandsBrandIdReviewRoute,
   BrandsBrandIdIndexRoute: BrandsBrandIdIndexRoute,
 }
 
