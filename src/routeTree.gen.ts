@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BrandsBrandIdRouteImport } from './routes/brands.$brandId'
+import { Route as ReviewsCheckIdRouteImport } from './routes/reviews.$checkId'
 import { Route as BrandsBrandIdIndexRouteImport } from './routes/brands.$brandId.index'
 import { Route as BrandsBrandIdBrainRouteImport } from './routes/brands.$brandId.brain'
 import { Route as BrandsBrandIdReviewRouteImport } from './routes/brands.$brandId.review'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const BrandsBrandIdRoute = BrandsBrandIdRouteImport.update({
   id: '/brands/$brandId',
   path: '/brands/$brandId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsCheckIdRoute = ReviewsCheckIdRouteImport.update({
+  id: '/reviews/$checkId',
+  path: '/reviews/$checkId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrandsBrandIdIndexRoute = BrandsBrandIdIndexRouteImport.update({
@@ -44,12 +50,14 @@ const BrandsBrandIdReviewRoute = BrandsBrandIdReviewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brands/$brandId': typeof BrandsBrandIdRouteWithChildren
+  '/reviews/$checkId': typeof ReviewsCheckIdRoute
   '/brands/$brandId/brain': typeof BrandsBrandIdBrainRoute
   '/brands/$brandId/review': typeof BrandsBrandIdReviewRoute
   '/brands/$brandId/': typeof BrandsBrandIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/reviews/$checkId': typeof ReviewsCheckIdRoute
   '/brands/$brandId/brain': typeof BrandsBrandIdBrainRoute
   '/brands/$brandId/review': typeof BrandsBrandIdReviewRoute
   '/brands/$brandId': typeof BrandsBrandIdIndexRoute
@@ -58,6 +66,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/brands/$brandId': typeof BrandsBrandIdRouteWithChildren
+  '/reviews/$checkId': typeof ReviewsCheckIdRoute
   '/brands/$brandId/brain': typeof BrandsBrandIdBrainRoute
   '/brands/$brandId/review': typeof BrandsBrandIdReviewRoute
   '/brands/$brandId/': typeof BrandsBrandIdIndexRoute
@@ -67,12 +76,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/brands/$brandId'
+    | '/reviews/$checkId'
     | '/brands/$brandId/brain'
     | '/brands/$brandId/review'
     | '/brands/$brandId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/reviews/$checkId'
     | '/brands/$brandId/brain'
     | '/brands/$brandId/review'
     | '/brands/$brandId'
@@ -80,6 +91,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/brands/$brandId'
+    | '/reviews/$checkId'
     | '/brands/$brandId/brain'
     | '/brands/$brandId/review'
     | '/brands/$brandId/'
@@ -88,6 +100,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrandsBrandIdRoute: typeof BrandsBrandIdRouteWithChildren
+  ReviewsCheckIdRoute: typeof ReviewsCheckIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -104,6 +117,13 @@ declare module '@tanstack/react-router' {
       path: '/brands/$brandId'
       fullPath: '/brands/$brandId'
       preLoaderRoute: typeof BrandsBrandIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews/$checkId': {
+      id: '/reviews/$checkId'
+      path: '/reviews/$checkId'
+      fullPath: '/reviews/$checkId'
+      preLoaderRoute: typeof ReviewsCheckIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brands/$brandId/': {
@@ -149,6 +169,7 @@ const BrandsBrandIdRouteWithChildren = BrandsBrandIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrandsBrandIdRoute: BrandsBrandIdRouteWithChildren,
+  ReviewsCheckIdRoute: ReviewsCheckIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
