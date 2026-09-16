@@ -146,9 +146,9 @@ function ReviewIntake() {
   const hasInput = brief.trim().length > 10 || copy.trim().length > 5 || !!asset;
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1.25fr_1fr]">
+    <div className="grid gap-16 lg:grid-cols-[1.25fr_1fr]">
       <div className="space-y-6">
-        <section className="rounded-lg border border-border bg-card p-5">
+        <section className="surface p-6">
           <h2 className="text-2xl">What are you reviewing?</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             A brief, copy, a visual asset, or all three. CoBrand reviews whatever it is given.
@@ -205,7 +205,7 @@ function ReviewIntake() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-5">
+        <section className="surface p-6">
           <h2 className="text-2xl">Context</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Optional, but it decides which rules apply. Leave anything you don't know blank.
@@ -250,7 +250,7 @@ function ReviewIntake() {
 
       <aside className="space-y-6">
         {report ? (
-          <div className="rounded-lg border border-border bg-card p-5">
+          <div className="surface p-6">
             <p className="eyebrow">Brand readiness for this review</p>
             <p className="display mt-2 text-4xl">{Math.round(report.score)}%</p>
             <p className="mt-2 text-sm">{report.can_do}</p>
@@ -279,13 +279,13 @@ function ReviewIntake() {
             ) : null}
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-border bg-card/50 p-5 text-sm text-muted-foreground">
+          <div className="surface-quiet border-dashed p-5 text-sm text-muted-foreground">
             CoBrand can tell you what it is able to judge before it reviews anything — useful when
             the brand model is still thin.
           </div>
         )}
 
-        <div className="rounded-lg border border-border bg-card p-5">
+        <div className="surface p-6">
           <p className="eyebrow">Past reviews</p>
           <ul className="mt-3 space-y-3 text-sm">
             {(history.data ?? []).slice(0, 8).map((check) => (

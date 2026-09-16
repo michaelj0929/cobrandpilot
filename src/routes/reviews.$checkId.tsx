@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
 import { AppShell, StateBadge } from "@/components/app-shell";
+import { Meter, ScoreRing } from "@/components/visuals";
+
 import { getCheck, signedAssetUrl } from "@/lib/cobrand-client";
 
 export const Route = createFileRoute("/reviews/$checkId")({
@@ -73,55 +75,51 @@ function ReviewResult() {
 
   return (
     <AppShell>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="eyebrow mb-2">
+      <div className="rise-enter mb-12 flex flex-wrap items-end justify-between gap-10">
+        <div className="max-w-2xl">
+          <p className="eyebrow mb-3">
             {check.data.brands?.name} · brand model v{check.data.brand_model_version}
           </p>
-          <h1 className="text-4xl leading-tight">
-            {check.data.asset_name ?? "Creative review"}
-          </h1>
+          <h1>{check.data.asset_name ?? "Creative review"}</h1>
           {check.data.summary ? (
-            <p className="mt-3 max-w-2xl text-muted-foreground">{check.data.summary}</p>
+            <p className="lede mt-5">{check.data.summary}</p>
           ) : null}
         </div>
-        <div className="text-right">
-          <p className="display text-6xl leading-none">{check.data.score ?? "—"}</p>
-          <p className="eyebrow mt-1">{check.data.label ?? check.data.status}</p>
+        <div className="flex items-center gap-5">
+          <ScoreRing value={check.data.score ?? 0} size={104} />
+          <p className="eyebrow max-w-[7rem]">{check.data.label ?? check.data.status}</p>
         </div>
       </div>
 
       {check.data.error ? (
-        <p className="mb-6 rounded border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <p className="mb-6 rounded-[var(--radius)] bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {check.data.error}
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-5">
+      <div className="grid gap-10 border-y border-border/60 py-8 sm:grid-cols-5">
         {Object.entries(DIMENSIONS).map(([key, label]) => (
-          <div key={key} className="rounded-lg border border-border bg-card p-4">
+          <div key={key}>
             <p className="eyebrow">{label}</p>
-            <p className="display mt-1 text-3xl">{scores[key] ?? "—"}</p>
-            <div className="mt-2 h-1 w-full rounded bg-muted">
-              <div
-                className="h-1 rounded bg-[var(--signal)]"
-                style={{ width: `${Math.max(0, Math.min(100, scores[key] ?? 0))}%` }}
-              />
+            <p className="display mt-2 text-3xl leading-none">{scores[key] ?? "—"}</p>
+            <div className="mt-3">
+              <Meter value={scores[key] ?? 0} />
             </div>
           </div>
         ))}
       </div>
 
+
       {readiness?.cannot_do ? (
-        <p className="mt-6 rounded-lg border border-dashed border-border bg-card/50 px-4 py-3 text-sm text-muted-foreground">
+        <p className="mt-6 surface-quiet border-dashed px-4 py-3 text-sm text-muted-foreground">
           Judged with {Math.round(readiness.score ?? 0)}% brand readiness. {readiness.cannot_do}
         </p>
       ) : null}
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_1.1fr]">
+      <div className="mt-10 grid gap-16 lg:grid-cols-[1fr_1.1fr]">
         {assetUrl && isImage ? (
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="relative overflow-hidden rounded-lg border border-border bg-card">
+            <div className="relative overflow-hidden surface">
               <img src={assetUrl} alt={check.data.asset_name ?? "Creative"} className="w-full" />
               {issues
                 .filter((f) => f.pin_x !== null && f.pin_y !== null)
@@ -151,7 +149,7 @@ function ReviewResult() {
             )}
           </div>
         ) : (
-          <div className="rounded-lg border border-border bg-card p-5">
+          <div className="surface p-6">
             <p className="eyebrow">What was reviewed</p>
             {check.data.brief_text ? (
               <>
@@ -184,7 +182,7 @@ function ReviewResult() {
           {issues.map((f) => (
             <article
               key={f.id}
-              className="rounded-lg border border-border bg-card p-5"
+              className="surface p-6"
               onMouseEnter={() => setActivePin(f.number)}
             >
               <div className="flex items-start gap-3">
@@ -237,7 +235,7 @@ function ReviewResult() {
           ))}
 
           {passes.length > 0 ? (
-            <section className="rounded-lg border border-border bg-card p-5">
+            <section className="surface p-6">
               <p className="eyebrow">What already works</p>
               <ul className="mt-3 space-y-2 text-sm">
                 {passes.map((f) => (

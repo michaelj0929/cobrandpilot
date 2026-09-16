@@ -1,8 +1,17 @@
-import { createFileRoute, Link, Outlet, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useParams,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
+
 import { AppShell } from "@/components/app-shell";
-import { getBrand } from "@/lib/cobrand-client";
+import { useBrandAccent } from "@/components/visuals";
+import { getBrand, listRules } from "@/lib/cobrand-client";
+
 
 export const Route = createFileRoute("/brands/$brandId")({
   head: () => ({
@@ -24,7 +33,12 @@ export const Route = createFileRoute("/brands/$brandId")({
 
 function BrandLayout() {
   const { brandId } = useParams({ from: "/brands/$brandId" });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const brand = useQuery({ queryKey: ["brand", brandId], queryFn: () => getBrand(brandId) });
+  const rules = useQuery({ queryKey: ["rules", brandId], queryFn: () => listRules(brandId) });
+  useBrandAccent(rules.data);
+
+
 
   const tabs = [
     { to: "/brands/$brandId", label: "Sources & gaps", exact: true },
@@ -34,30 +48,36 @@ function BrandLayout() {
 
   return (
     <AppShell>
-      <div className="mb-8">
-        <p className="eyebrow mb-2">Brand</p>
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="text-4xl leading-tight">{brand.data?.name ?? "…"}</h1>
-          <span className="text-sm text-muted-foreground">
+      <div className="mb-14">
+        <p className="eyebrow mb-4">Brand</p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1>{brand.data?.name ?? "…"}</h1>
+          <span className="pb-2 text-sm text-muted-foreground">
             Brand model v{brand.data?.current_version ?? 1}
           </span>
         </div>
-        <nav className="mt-6 flex flex-wrap gap-1 border-b border-border">
+        <nav className="mt-10 flex flex-wrap gap-8 border-b border-border/70">
           {tabs.map((tab) => (
             <Link
               key={tab.label}
               to={tab.to}
               params={{ brandId }}
               activeOptions={{ exact: tab.exact }}
-              className="-mb-px border-b-2 border-transparent px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              activeProps={{ className: "border-foreground text-foreground font-medium" }}
+              className="-mb-px border-b border-transparent pb-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              activeProps={{
+                className:
+                  "border-[var(--brand-accent)] text-foreground [border-bottom-width:2px]",
+              }}
             >
               {tab.label}
             </Link>
           ))}
         </nav>
       </div>
-      <Outlet />
+      <div key={pathname} className="view-enter">
+        <Outlet />
+      </div>
     </AppShell>
   );
 }
+
