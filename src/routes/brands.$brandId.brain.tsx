@@ -24,14 +24,10 @@ import {
   listVersions,
   ruleValue,
   type BrandRule,
-} from "@/lib/cobrand-client";
-import {
-  applyEdits,
-  confirmRule,
-  draftEdits,
-  saveRule,
   type ProposedEdits,
-} from "@/lib/cobrand.functions";
+} from "@/lib/cobrand-client";
+import { applyEdits, confirmRule, draftEdits, saveRule } from "@/lib/cobrand.functions";
+
 
 export const Route = createFileRoute("/brands/$brandId/brain")({
   head: () => ({
