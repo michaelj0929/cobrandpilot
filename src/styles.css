@@ -156,5 +156,23 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
   }
 }
+
