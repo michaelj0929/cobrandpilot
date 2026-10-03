@@ -51,7 +51,7 @@ function Dashboard() {
 
   if (family.isLoading) {
     return (
-      <AppShell>
+      <AppShell workspaceId={workspaceId}>
         <p className="text-sm text-ink-muted">Loading…</p>
       </AppShell>
     );
@@ -60,7 +60,7 @@ function Dashboard() {
   const master = family.data?.master ?? null;
   if (!master) {
     return (
-      <AppShell>
+      <AppShell workspaceId={workspaceId}>
         <MasterBrandSetup workspaceId={workspaceId} />
       </AppShell>
     );

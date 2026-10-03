@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 - Data is scoped per workspace: brands.workspace_id → workspaces.owner_id, enforced by RLS helpers (owns_workspace/can_access_brand); admin-client server functions must call assertAccess with the user's client first. Why: server functions bypass RLS.
 - App pages live under src/routes/_authenticated (Google sign-in gate); "/" and "/auth" are the public landing. Why: one public entry, everything else needs a session.
+- The shared AppShell owns a workspace-aware, collapsible navigation; keep brand actions hidden until a workspace is selected. Why: navigation should reflect the current scope without duplicating route-specific menus.
