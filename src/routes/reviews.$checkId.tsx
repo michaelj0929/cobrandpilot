@@ -74,16 +74,20 @@ function ReviewResult() {
   }
 
   return (
-    <AppShell>
+    <AppShell
+      brand={{
+        id: check.data.brand_id,
+        name: check.data.brands?.name ?? null,
+        version: check.data.brands?.current_version ?? null,
+      }}
+    >
       <div className="rise-enter mb-12 flex flex-wrap items-end justify-between gap-10">
         <div className="max-w-2xl">
           <p className="eyebrow mb-3">
             {check.data.brands?.name} · brand model v{check.data.brand_model_version}
           </p>
           <h1>{check.data.asset_name ?? "Creative review"}</h1>
-          {check.data.summary ? (
-            <p className="lede mt-5">{check.data.summary}</p>
-          ) : null}
+          {check.data.summary ? <p className="lede mt-5">{check.data.summary}</p> : null}
         </div>
         <div className="flex items-center gap-5">
           <ScoreRing value={check.data.score ?? 0} size={104} />
@@ -108,7 +112,6 @@ function ReviewResult() {
           </div>
         ))}
       </div>
-
 
       {readiness?.cannot_do ? (
         <p className="mt-6 surface-quiet border-dashed px-4 py-3 text-sm text-muted-foreground">
@@ -168,9 +171,7 @@ function ReviewResult() {
               </>
             ) : null}
             {check.data.asset_name && !isImage ? (
-              <p className="mt-4 text-sm text-muted-foreground">
-                Asset: {check.data.asset_name}
-              </p>
+              <p className="mt-4 text-sm text-muted-foreground">Asset: {check.data.asset_name}</p>
             ) : null}
           </div>
         )}
@@ -180,11 +181,7 @@ function ReviewResult() {
             {issues.length} {issues.length === 1 ? "issue" : "issues"} to fix
           </h2>
           {issues.map((f) => (
-            <article
-              key={f.id}
-              className="surface p-6"
-              onMouseEnter={() => setActivePin(f.number)}
-            >
+            <article key={f.id} className="surface p-6" onMouseEnter={() => setActivePin(f.number)}>
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--signal)] text-xs font-semibold text-[var(--signal-foreground)]">
                   {f.number}

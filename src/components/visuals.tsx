@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { isColor, ruleValue, type BrandRule } from "@/lib/cobrand-client";
 
@@ -31,7 +31,10 @@ export function ScoreRing({
   const c = 2 * Math.PI * r;
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
@@ -134,34 +137,4 @@ export function fontFamilyOf(rule: BrandRule): string | null {
     .replace(/\s+/g, " ")
     .trim();
   return cleaned.length >= 2 ? cleaned : null;
-}
-
-/**
- * Let a brand's own identity colour drive the screen it is shown on,
- * instead of leaving everything in the app's default neutral chrome.
- */
-export function useBrandAccent(rules: BrandRule[] | undefined) {
-  const accent = useMemo(() => {
-    const colors = (rules ?? []).filter(
-      (r) => r.rule_type === "color" && r.status !== "archived" && isColor(ruleValue(r.value)),
-    );
-    if (colors.length === 0) return null;
-    const primary =
-      colors.find((r) => /primary|core|main|brand/i.test(r.label)) ??
-      colors.find((r) => r.status === "confirmed") ??
-      colors[0];
-    return primary ? ruleValue(primary.value).trim() : null;
-  }, [rules]);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const root = document.documentElement;
-    if (accent) root.style.setProperty("--brand-accent", accent);
-    return () => {
-      root.style.removeProperty("--brand-accent");
-    };
-
-  }, [accent]);
-
-  return accent;
 }
