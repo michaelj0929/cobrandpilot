@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-export const ACCEPTED_TYPES =
-  ".pdf,.png,.jpg,.jpeg,.webp,.svg,.pptx,.docx,.txt,.md,.markdown,.csv";
+export const ACCEPTED_TYPES = ".pdf,.png,.jpg,.jpeg,.webp,.svg,.pptx,.docx,.txt,.md,.markdown,.csv";
 
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_FILES_PER_PASS = 10;
@@ -29,19 +29,85 @@ export function isColor(value: string) {
   return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
 }
 
-export async function listBrands() {
+/*
+ * Brand hierarchy: one master brand, with sub-brands and product lines under
+ * it (migration 20261002230000). Until Lovable regenerates
+ * src/integrations/supabase/types.ts, the new columns are typed here; once it
+ * has, Brand can become Tables<"brands"> and the casts below can go.
+ */
+export type BrandKind = "master" | "sub_brand" | "product_line";
+export type Brand = Tables<"brands"> & {
+  parent_brand_id: string | null;
+  kind: BrandKind;
+};
+
+export const BRAND_KIND_LABEL: Record<BrandKind, string> = {
+  master: "Master brand",
+  sub_brand: "Sub-brand",
+  product_line: "Product line",
+};
+
+function asBrand(row: Tables<"brands">): Brand {
+  const r = row as Partial<Brand> & Tables<"brands">;
+  const parent = r.parent_brand_id ?? null;
+  return { ...r, parent_brand_id: parent, kind: r.kind ?? (parent ? "sub_brand" : "master") };
+}
+
+export async function listBrands(): Promise<Brand[]> {
   const { data, error } = await supabase
     .from("brands")
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map(asBrand);
 }
 
-export async function getBrand(brandId: string) {
+export async function getBrand(brandId: string): Promise<Brand | null> {
   const { data, error } = await supabase.from("brands").select("*").eq("id", brandId).maybeSingle();
   if (error) throw error;
-  return data;
+  return data ? asBrand(data) : null;
+}
+
+/** The workspace's master brand plus its sub-brands / product lines. */
+export async function getBrandFamily() {
+  const brands = await listBrands();
+  const master = brands.find((b) => b.parent_brand_id === null) ?? null;
+  const subBrands = master
+    ? brands
+        .filter((b) => b.parent_brand_id === master.id)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+  return { master, subBrands };
+}
+
+export async function createBrand(input: {
+  name: string;
+  category?: string | null;
+  primaryMarket?: string | null;
+  description?: string | null;
+  parentBrandId?: string;
+  kind?: BrandKind;
+}) {
+  const row = {
+    name: input.name.trim(),
+    category: input.category?.trim() || null,
+    primary_market: input.primaryMarket?.trim() || null,
+    description: input.description?.trim() || null,
+    parent_brand_id: input.parentBrandId ?? null,
+    kind: input.parentBrandId ? (input.kind ?? "sub_brand") : "master",
+  };
+  const { data, error } = await supabase
+    .from("brands")
+    .insert(row as TablesInsert<"brands">)
+    .select("id")
+    .single();
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("This workspace already has a master brand. Add a sub-brand instead.");
+    }
+    throw error;
+  }
+  return data.id;
 }
 
 export async function listSources(brandId: string) {

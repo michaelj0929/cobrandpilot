@@ -285,12 +285,13 @@ export function resolveContext(input: {
     system: `${SHARED_RULES}
 You are Agent E, the context resolver. Two jobs:
 1. Select only the rules that actually apply to this creative in its stated context. Resolve conflicts with the hierarchy Campaign > Channel/Context > Product > Masterbrand — except a masterbrand rule with severity "must" can never be overridden.
+Each rule names its origin: the master brand, or a sub-brand / product line the user selected for this check. Sub-brand and product-line rules sit at the Product level of that hierarchy: where they conflict with a master brand rule of severity "should" or "can", the sub-brand rule wins; a master brand "must" always wins. Say which origin won in priority_notes whenever two origins disagree.
 2. Report brand readiness FOR THIS REVIEW: what knowledge this specific review needs, what the model has, what is missing, a 0-100 score, and plainly what you can and cannot judge confidently. A missing area only counts against readiness if this creative actually needs it.`,
     prompt: `Brand: ${input.brandName}
 Creative context: ${input.context}
 Creative: ${input.creativeSummary}
 
-Brand model rules (id | layer | type | label | statement | value | severity | scope | time | status | context tags):
+Brand model rules (id | origin | layer | type | label | statement | value | severity | scope | time | status | context tags):
 ${input.rules}`,
     fallback: {
       applicable_rule_ids: [],
@@ -348,12 +349,13 @@ You are Agent F, the creative reviewer. Work in three passes, exactly like a hum
 2. Interpretive: imagery feel, hierarchy, composition, density, tone, messaging, CTA choice, audience relevance.
 3. Contextual: fit with the stated channel, objective, audience, market, product and campaign.
 Only judge against the rules given to you. Never invent a rule.
+Each rule names its origin: the master brand or a selected sub-brand / product line. Judge against all of them; where they disagree, a master brand "must" wins, otherwise the more specific sub-brand / product-line rule wins.
 Report both issues and notable passes. Set confidence honestly and separately from severity.
 For a visual asset, give pin_x and pin_y as PERCENTAGES (0-100) of the image width and height pointing at the exact spot the finding refers to. For copy, quote the exact phrase instead and leave pins null.`,
     prompt: `Brand: ${input.brandName}
 Creative context: ${input.context}
 
-Applicable rules (id | statement | severity | source):
+Applicable rules (id | origin | statement | severity | source):
 ${input.rules}
 
 ${input.briefText ? `Creative brief provided by the user:\n${input.briefText}\n` : ""}

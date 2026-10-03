@@ -20,6 +20,21 @@ async function db(): Promise<Db> {
   return supabaseAdmin;
 }
 
+/** A brand's master, if it is a sub-brand / product line (else null). */
+async function parentBrand(brandId: string) {
+  const supabase = await db();
+  // parent_brand_id comes from migration 20261002230000; cast until types regenerate.
+  const { data } = await supabase.from("brands").select("*").eq("id", brandId).maybeSingle();
+  const parentId = (data as { parent_brand_id?: string | null } | null)?.parent_brand_id ?? null;
+  if (!parentId) return null;
+  const { data: parent } = await supabase
+    .from("brands")
+    .select("id, name")
+    .eq("id", parentId)
+    .maybeSingle();
+  return parent;
+}
+
 function ruleLine(r: {
   id: string;
   layer: string;
@@ -150,12 +165,19 @@ export const ingestSource = createServerFn({ method: "POST" })
         file: prepared.file,
       });
 
-      // Agent C — compare with confirmed truth.
-      const { data: confirmed } = await supabase
+      // Agent C — compare with confirmed truth. A sub-brand is also checked
+      // against its master brand's confirmed rules.
+      const master = await parentBrand(source.brand_id);
+      const { data: confirmedRows } = await supabase
         .from("rules")
-        .select("id, layer, rule_type, label, statement, value, severity")
-        .eq("brand_id", source.brand_id)
+        .select("id, brand_id, layer, rule_type, label, statement, value, severity")
+        .in("brand_id", master ? [source.brand_id, master.id] : [source.brand_id])
         .eq("status", "confirmed");
+      const confirmed = (confirmedRows ?? []).map((r) =>
+        master && r.brand_id === master.id
+          ? { ...r, label: `${master.name} (master brand): ${r.label}` }
+          : r,
+      );
 
       let conflicts: { incoming_label: string; note: string }[] = [];
       if ((confirmed?.length ?? 0) > 0 && extraction.rules.length > 0) {
@@ -244,7 +266,11 @@ export const ingestSource = createServerFn({ method: "POST" })
         "propose",
       );
 
-      return { rules: extraction.rules.length, conflicts: conflicts.length, notes: extraction.notes };
+      return {
+        rules: extraction.rules.length,
+        conflicts: conflicts.length,
+        notes: extraction.notes,
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Ingestion failed.";
       await supabase
@@ -266,6 +292,13 @@ export const runGapCheck = createServerFn({ method: "POST" })
       .select("id, name")
       .eq("id", data.brandId)
       .maybeSingle();
+
+    // The essential checklist belongs to the master brand. A sub-brand or
+    // product line only adds to it, so it has no setup gaps of its own.
+    if (await parentBrand(data.brandId)) {
+      await supabase.from("setup_gaps").delete().eq("brand_id", data.brandId).eq("resolved", false);
+      return { gaps: [], summary: "Sub-brands inherit the master brand's essentials.", found: [] };
+    }
 
     const rules = await loadRuleLines(data.brandId);
     const result = await analyzeGaps({ brandName: brand?.name ?? "the brand", rules });
@@ -410,7 +443,6 @@ export const applyEdits = createServerFn({ method: "POST" })
             : {}),
         })
         .eq("id", change.rule_id);
-
     }
 
     const version = await bumpVersion(data.brandId, data.summary, "chat");

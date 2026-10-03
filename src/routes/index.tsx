@@ -2,15 +2,29 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ArrowRight } from "lucide-react";
+
 import { AppShell, Empty, PageHead, SectionHead } from "@/components/app-shell";
 import { Meter, ScoreRing } from "@/components/visuals";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { listBrands, listChecks } from "@/lib/cobrand-client";
+import {
+  BRAND_KIND_LABEL,
+  createBrand,
+  getBrandFamily,
+  listChecks,
+  type Brand,
+  type BrandKind,
+} from "@/lib/cobrand-client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,38 +46,27 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [market, setMarket] = useState("");
-  const [description, setDescription] = useState("");
-
-  const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands });
+  const family = useQuery({ queryKey: ["brand-family"], queryFn: getBrandFamily });
   const checks = useQuery({ queryKey: ["checks"], queryFn: () => listChecks() });
 
-  const createBrand = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .insert({
-          name: name.trim(),
-          category: category.trim() || null,
-          primary_market: market.trim() || null,
-          description: description.trim() || null,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data.id;
-    },
-    onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
-      navigate({ to: "/brands/$brandId", params: { brandId: id } });
-    },
-  });
+  if (family.isLoading) {
+    return (
+      <AppShell>
+        <p className="text-sm text-ink-muted">Loading…</p>
+      </AppShell>
+    );
+  }
 
+  const master = family.data?.master ?? null;
+  if (!master) {
+    return (
+      <AppShell>
+        <MasterBrandSetup />
+      </AppShell>
+    );
+  }
+
+  const subBrands = family.data?.subBrands ?? [];
   const scored = (checks.data ?? []).filter((c) => c.score !== null);
   const averageScore =
     scored.length > 0
@@ -71,12 +74,24 @@ function Dashboard() {
       : null;
 
   return (
-    <AppShell>
+    <AppShell
+      brand={{
+        id: master.id,
+        name: master.name,
+        version: master.current_version,
+        kindLabel: "Master brand",
+      }}
+    >
       <PageHead
-        title="Your brands"
-        description="Feed CoBrand your guidelines and it builds a brand model you can interrogate, correct and review creative against."
+        title={master.name}
+        description="Your master brand system is the knowledge base every check runs against. Sub-brands and product lines add their own guidelines on top."
         actions={
-          <Button onClick={() => setOpen((v) => !v)}>{open ? "Cancel" : "New brand"}</Button>
+          <Button asChild>
+            <Link to="/brands/$brandId/review" params={{ brandId: master.id }}>
+              <ArrowRight aria-hidden />
+              Check content
+            </Link>
+          </Button>
         }
       />
 
@@ -91,9 +106,9 @@ function Dashboard() {
           </div>
         </section>
         <section className="flex flex-col gap-1 rounded-lg bg-yellow-tint px-6 py-[22px]">
-          <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brands</h2>
-          <span className="stat">{brands.data?.length ?? "–"}</span>
-          <span className="text-xs text-ink-muted">brand models</span>
+          <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Sub-brands</h2>
+          <span className="stat">{subBrands.length}</span>
+          <span className="text-xs text-ink-muted">sub-brands and product lines</span>
         </section>
         <section className="flex flex-col gap-1 rounded-lg bg-sky-tint px-6 py-[22px]">
           <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Reviews</h2>
@@ -102,95 +117,17 @@ function Dashboard() {
         </section>
       </div>
 
-      {open ? (
-        <div className="reveal-enter surface mb-7 px-6 py-[22px]">
-          <h2>Start a brand</h2>
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="name">Brand name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                placeholder="e.g. financial services"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="market">Primary market</Label>
-              <Input
-                id="market"
-                placeholder="e.g. UK"
-                value={market}
-                onChange={(e) => setMarket(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label htmlFor="description">Anything CoBrand should know</Label>
-              <Textarea
-                id="description"
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button
-            className="mt-6"
-            disabled={!name.trim() || createBrand.isPending}
-            onClick={() => createBrand.mutate()}
-          >
-            {createBrand.isPending ? "Creating…" : "Create brand"}
-          </Button>
-          {createBrand.isError ? (
-            <p className="mt-4 text-sm text-destructive">{(createBrand.error as Error).message}</p>
-          ) : null}
-        </div>
-      ) : null}
+      <BrandCard brand={master} />
 
-      {brands.isLoading ? (
-        <p className="text-sm text-ink-muted">Loading…</p>
-      ) : (brands.data ?? []).length === 0 ? (
-        <Empty
-          title="No brands yet"
-          body="Create a brand, then upload its guidelines, decks and approved work. CoBrand reads them and builds the model."
-        />
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2">
-          {(brands.data ?? []).map((brand, i) => (
-            <Link
-              key={brand.id}
-              to="/brands/$brandId"
-              params={{ brandId: brand.id }}
-              className="rise-enter surface surface-hover flex flex-col gap-2 px-6 py-[22px]"
-              style={{ animationDelay: `${Math.min(i, 6) * 50}ms` }}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <h2 className="text-xl leading-7">{brand.name}</h2>
-                <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-brand-tint px-2.5 text-xs font-semibold text-brand">
-                  v{brand.current_version}
-                </span>
-              </div>
-              <p className="text-[13px] text-ink-muted">
-                {[brand.category, brand.primary_market].filter(Boolean).join(" · ") ||
-                  "No category set"}
-              </p>
-              {brand.description ? (
-                <p className="line-clamp-2 text-sm">{brand.description}</p>
-              ) : null}
-            </Link>
-          ))}
-        </div>
-      )}
+      <section className="mt-7">
+        <SubBrandSection master={master} subBrands={subBrands} />
+      </section>
 
       {(checks.data ?? []).length > 0 ? (
         <section className="surface mt-7 px-6 py-[22px]">
           <SectionHead
             title="Recent reviews"
-            description="Every creative CoBrand has judged against a brand model."
+            description="Every creative CoBrand has judged against the brand system."
           />
           <ul>
             {(checks.data ?? []).slice(0, 8).map((check) => (
@@ -219,5 +156,201 @@ function Dashboard() {
         </section>
       ) : null}
     </AppShell>
+  );
+}
+
+/** First run: the workspace has no master brand yet. */
+function MasterBrandSetup() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [market, setMarket] = useState("");
+  const [description, setDescription] = useState("");
+
+  const create = useMutation({
+    mutationFn: () => createBrand({ name, category, primaryMarket: market, description }),
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ["brand-family"] });
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      navigate({ to: "/brands/$brandId", params: { brandId: id } });
+    },
+  });
+
+  return (
+    <div className="grid items-center gap-12 py-6 lg:grid-cols-[1fr_1fr]">
+      <div className="flex flex-col gap-5">
+        <h1 className="display">Your brand workspace is ready</h1>
+        <p className="lede">
+          Start with your master brand. Upload everything that defines it, and CoBrand organizes it
+          into a living brand system that every check runs against. Sub-brands and product lines
+          come after.
+        </p>
+      </div>
+
+      <section className="surface px-6 py-[22px]">
+        <h2>Set up your master brand</h2>
+        <p className="mt-1 text-sm text-ink-muted">A workspace has one master brand.</p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-1.5 sm:col-span-2">
+            <Label htmlFor="name">Brand name</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="category">Category</Label>
+            <Input
+              id="category"
+              placeholder="e.g. financial services"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="market">Primary market</Label>
+            <Input
+              id="market"
+              placeholder="e.g. UK"
+              value={market}
+              onChange={(e) => setMarket(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5 sm:col-span-2">
+            <Label htmlFor="description">Anything CoBrand should know</Label>
+            <Textarea
+              id="description"
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+        </div>
+        <Button
+          className="mt-6"
+          disabled={!name.trim() || create.isPending}
+          onClick={() => create.mutate()}
+        >
+          <ArrowRight aria-hidden />
+          {create.isPending ? "Creating…" : "Create and upload documents"}
+        </Button>
+        {create.isError ? (
+          <p className="mt-4 text-sm text-destructive">{(create.error as Error).message}</p>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+function SubBrandSection({ master, subBrands }: { master: Brand; subBrands: Brand[] }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [kind, setKind] = useState<BrandKind>("product_line");
+  const [description, setDescription] = useState("");
+
+  const create = useMutation({
+    mutationFn: () => createBrand({ name, description, parentBrandId: master.id, kind }),
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ["brand-family"] });
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      navigate({ to: "/brands/$brandId", params: { brandId: id } });
+    },
+  });
+
+  return (
+    <>
+      <SectionHead
+        title="Sub-brands and product lines"
+        description={`Their own guidelines, on top of ${master.name}. When you check content, pick which ones apply.`}
+        actions={
+          <Button variant="secondary" size="sm" onClick={() => setOpen((v) => !v)}>
+            {open ? "Cancel" : "New sub-brand or product line"}
+          </Button>
+        }
+      />
+
+      {open ? (
+        <div className="reveal-enter surface mb-5 px-6 py-[22px]">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="sub-name">Name</Label>
+              <Input
+                id="sub-name"
+                placeholder="e.g. Air Max"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Type</Label>
+              <Select value={kind} onValueChange={(v) => setKind(v as BrandKind)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="product_line">Product line</SelectItem>
+                  <SelectItem value="sub_brand">Sub-brand</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label htmlFor="sub-description">What makes it different</Label>
+              <Textarea
+                id="sub-description"
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <Button
+            className="mt-6"
+            disabled={!name.trim() || create.isPending}
+            onClick={() => create.mutate()}
+          >
+            {create.isPending ? "Creating…" : "Create and upload guidelines"}
+          </Button>
+          {create.isError ? (
+            <p className="mt-4 text-sm text-destructive">{(create.error as Error).message}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {subBrands.length === 0 ? (
+        <Empty
+          title="No sub-brands yet"
+          body="Add a sub-brand or product line to upload guidelines that only apply to it."
+        />
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2">
+          {subBrands.map((brand) => (
+            <BrandCard key={brand.id} brand={brand} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function BrandCard({ brand }: { brand: Brand }) {
+  return (
+    <Link
+      to="/brands/$brandId/brain"
+      params={{ brandId: brand.id }}
+      className="rise-enter surface surface-hover flex flex-col gap-2 px-6 py-[22px]"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <h2 className="text-xl leading-7">{brand.name}</h2>
+        <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-brand-tint px-2.5 text-xs font-semibold text-brand">
+          {BRAND_KIND_LABEL[brand.kind]} · v{brand.current_version}
+        </span>
+      </div>
+      {brand.category || brand.primary_market ? (
+        <p className="text-[13px] text-ink-muted">
+          {[brand.category, brand.primary_market].filter(Boolean).join(" · ")}
+        </p>
+      ) : null}
+      {brand.description ? <p className="line-clamp-2 text-sm">{brand.description}</p> : null}
+    </Link>
   );
 }

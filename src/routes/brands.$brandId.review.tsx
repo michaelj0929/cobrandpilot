@@ -1,20 +1,31 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { PageHead } from "@/components/app-shell";
 import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { MAX_FILE_BYTES, listChecks, uploadToBucket } from "@/lib/cobrand-client";
+import type { TablesInsert } from "@/integrations/supabase/types";
+import {
+  BRAND_KIND_LABEL,
+  MAX_FILE_BYTES,
+  getBrandFamily,
+  listChecks,
+  uploadToBucket,
+} from "@/lib/cobrand-client";
 import { readBrief } from "@/lib/cobrand.functions";
 import { checkReadiness, runReview } from "@/lib/review.functions";
 
 export const Route = createFileRoute("/brands/$brandId/review")({
+  // ?with=<sub-brand id> pre-selects a sub-brand / product line's guidelines.
+  validateSearch: (search: Record<string, unknown>): { with?: string } =>
+    typeof search["with"] === "string" ? { with: search["with"] } : {},
   head: () => ({
     meta: [
       { title: "Review creative — CoBrand" },
@@ -53,6 +64,7 @@ const FIELDS = [
 
 function ReviewIntake() {
   const { brandId } = useParams({ from: "/brands/$brandId/review" });
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -75,6 +87,38 @@ function ReviewIntake() {
     queryFn: () => listChecks(brandId),
   });
 
+  // Checks run on the master brand plus any selected sub-brands / product lines.
+  const family = useQuery({ queryKey: ["brand-family"], queryFn: getBrandFamily });
+  const subBrands = family.data?.subBrands ?? [];
+  const [selectedSubs, setSelectedSubs] = useState<string[]>(search.with ? [search.with] : []);
+
+  useEffect(() => {
+    const master = family.data?.master;
+    if (master && master.id !== brandId) {
+      // Opened from a sub-brand: run the check on its master with it selected.
+      navigate({
+        to: "/brands/$brandId/review",
+        params: { brandId: master.id },
+        search: { with: brandId },
+        replace: true,
+      });
+    }
+  }, [family.data?.master, brandId, navigate]);
+
+  useEffect(() => {
+    if (search.with) {
+      const id = search.with;
+      setSelectedSubs((current) => (current.includes(id) ? current : [...current, id]));
+    }
+  }, [search.with]);
+
+  const toggleSub = (id: string, on: boolean) => {
+    setSelectedSubs((current) => (on ? [...current, id] : current.filter((s) => s !== id)));
+    // The draft check records its guideline sets, so start a fresh one.
+    setCheckId(null);
+    setReport(null);
+  };
+
   const set = (key: string, value: string) => setContext((c) => ({ ...c, [key]: value }));
 
   const readTheBrief = useMutation({
@@ -93,6 +137,8 @@ function ReviewIntake() {
     onError: (e) => setError((e as Error).message),
   });
 
+  const subBrandIds = selectedSubs.filter((id) => subBrands.some((b) => b.id === id));
+
   const createCheck = async () => {
     let assetPath: string | null = null;
     if (asset) {
@@ -107,19 +153,23 @@ function ReviewIntake() {
       : copy.trim()
         ? "copy"
         : "brief";
+    const row = {
+      brand_id: brandId,
+      input_type: inputType,
+      brief_text: brief.trim() || null,
+      copy_text: copy.trim() || null,
+      asset_path: assetPath,
+      asset_name: asset?.name ?? null,
+      asset_mime: asset?.type ?? null,
+      creative_context: { ...context, ...(keyMessage ? { key_message: keyMessage } : {}) },
+      status: "draft",
+      // From migration 20261002230000; cast until types regenerate. Only sent
+      // when used, so master-only checks don't depend on the new column.
+      ...(subBrandIds.length > 0 ? { sub_brand_ids: subBrandIds } : {}),
+    };
     const { data, error: insertError } = await supabase
       .from("validation_checks")
-      .insert({
-        brand_id: brandId,
-        input_type: inputType,
-        brief_text: brief.trim() || null,
-        copy_text: copy.trim() || null,
-        asset_path: assetPath,
-        asset_name: asset?.name ?? null,
-        asset_mime: asset?.type ?? null,
-        creative_context: { ...context, ...(keyMessage ? { key_message: keyMessage } : {}) },
-        status: "draft",
-      })
+      .insert(row as TablesInsert<"validation_checks">)
       .select("id")
       .single();
     if (insertError) throw insertError;
@@ -231,6 +281,47 @@ function ReviewIntake() {
                 </span>
               </div>
             </div>
+          </section>
+
+          <section className="surface px-6 py-[22px]">
+            <h2>Guidelines to check against</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              The master brand system is always included. Add any sub-brand or product line this
+              creative belongs to.
+            </p>
+            <ul className="mt-4 flex flex-col gap-3">
+              <li className="flex items-center gap-3">
+                <Checkbox id="guide-master" checked disabled aria-describedby="guide-master-note" />
+                <Label htmlFor="guide-master" className="text-sm">
+                  {family.data?.master?.name ?? "Master brand"}
+                </Label>
+                <span id="guide-master-note" className="text-xs text-ink-muted">
+                  master brand · always included
+                </span>
+              </li>
+              {subBrands.map((sub) => (
+                <li key={sub.id} className="flex items-center gap-3">
+                  <Checkbox
+                    id={`guide-${sub.id}`}
+                    checked={selectedSubs.includes(sub.id)}
+                    disabled={!!busy}
+                    onCheckedChange={(v) => toggleSub(sub.id, v === true)}
+                  />
+                  <Label htmlFor={`guide-${sub.id}`} className="cursor-pointer text-sm">
+                    {sub.name}
+                  </Label>
+                  <span className="text-xs text-ink-muted lowercase">
+                    {BRAND_KIND_LABEL[sub.kind]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {family.isSuccess && subBrands.length === 0 ? (
+              <p className="mt-3 text-xs text-ink-muted">
+                No sub-brands or product lines yet. Add them from Home to check against their
+                guidelines too.
+              </p>
+            ) : null}
           </section>
 
           <section className="surface px-6 py-[22px]">

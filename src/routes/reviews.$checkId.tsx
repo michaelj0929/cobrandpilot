@@ -8,7 +8,7 @@ import { AppShell, StateBadge } from "@/components/app-shell";
 import { BusyLine } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { Meter, ScoreRing } from "@/components/visuals";
-import { getCheck, signedAssetUrl } from "@/lib/cobrand-client";
+import { BRAND_KIND_LABEL, getCheck, listBrands, signedAssetUrl } from "@/lib/cobrand-client";
 
 export const Route = createFileRoute("/reviews/$checkId")({
   head: () => ({
@@ -43,6 +43,11 @@ function ReviewResult() {
   const [activePin, setActivePin] = useState<number | null>(null);
 
   const check = useQuery({ queryKey: ["check", checkId], queryFn: () => getCheck(checkId) });
+  const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands });
+  // sub_brand_ids comes from migration 20261002230000; cast until types regenerate.
+  const subBrandIds =
+    (check.data as { sub_brand_ids?: string[] | null } | null | undefined)?.sub_brand_ids ?? [];
+  const checkedSubBrands = (brands.data ?? []).filter((b) => subBrandIds.includes(b.id));
 
   useEffect(() => {
     const path = check.data?.asset_path;
@@ -91,6 +96,20 @@ function ReviewResult() {
           </p>
           <h1>{check.data.asset_name ?? "Creative review"}</h1>
           {check.data.summary ? <p className="lede">{check.data.summary}</p> : null}
+          <p className="flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+            Checked against
+            <span className="inline-flex h-6 items-center rounded-full bg-brand-tint px-2.5 font-semibold text-brand">
+              {check.data.brands?.name ?? "Master brand"}
+            </span>
+            {checkedSubBrands.map((sub) => (
+              <span
+                key={sub.id}
+                className="inline-flex h-6 items-center rounded-full bg-card px-2.5 font-semibold text-ink ring-1 ring-line-soft"
+              >
+                {sub.name} · {BRAND_KIND_LABEL[sub.kind].toLowerCase()}
+              </span>
+            ))}
+          </p>
         </div>
         <section className="flex items-center gap-4 rounded-lg bg-brand-tint px-6 py-[18px]">
           <ScoreRing value={check.data.score ?? 0} size={84} />

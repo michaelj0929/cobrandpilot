@@ -23,6 +23,8 @@ import {
   isColor,
   listGaps,
   listRules,
+  BRAND_KIND_LABEL,
+  getBrand,
   listVersions,
   ruleValue,
   type BrandRule,
@@ -65,6 +67,13 @@ function BrandBrain() {
 
   const rules = useQuery({ queryKey: ["rules", brandId], queryFn: () => listRules(brandId) });
   const gaps = useQuery({ queryKey: ["gaps", brandId], queryFn: () => listGaps(brandId) });
+  const brand = useQuery({ queryKey: ["brand", brandId], queryFn: () => getBrand(brandId) });
+  const parentId = brand.data?.parent_brand_id ?? null;
+  const master = useQuery({
+    queryKey: ["brand", parentId],
+    queryFn: () => getBrand(parentId ?? ""),
+    enabled: parentId !== null,
+  });
   const versions = useQuery({
     queryKey: ["versions", brandId],
     queryFn: () => listVersions(brandId),
@@ -151,10 +160,19 @@ function BrandBrain() {
 
   return (
     <>
-      <PageHead
-        title="Brand Brain"
-        description="Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
-      />
+      {parentId ? (
+        <PageHead
+          {...(brand.data ? { eyebrow: BRAND_KIND_LABEL[brand.data.kind] } : {})}
+          title={`${brand.data?.name ?? ""} guidelines`}
+          description={`Rules that only apply to ${brand.data?.name ?? "this sub-brand"}. Checks that select it use these on top of the ${master.data?.name ?? "master brand"} brand system; ${master.data?.name ?? "master brand"} Must rules still win.`}
+        />
+      ) : (
+        <PageHead
+          eyebrow="Master brand"
+          title="Your brand system"
+          description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
+        />
+      )}
       <div className="mb-7 flex flex-wrap items-center gap-3">
         <Button asChild variant="secondary">
           <Link to="/brands/$brandId/review" params={{ brandId }}>

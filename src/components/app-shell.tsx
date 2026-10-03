@@ -13,7 +13,14 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** The brand the current page belongs to; scopes the brand nav items. */
-export type ShellBrand = { id: string; name?: string | null; version?: number | null };
+export type ShellBrand = {
+  id: string;
+  name?: string | null;
+  version?: number | null;
+  /** Set for a sub-brand / product line: its master brand. */
+  master?: { id: string; name: string } | null;
+  kindLabel?: string | null;
+};
 
 export function AppShell({ brand, children }: { brand?: ShellBrand; children: ReactNode }) {
   return (
@@ -32,13 +39,15 @@ const navItem =
 function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const brandBase = brand ? `/brands/${brand.id}` : null;
+  // Checks always run on the master brand; a sub-brand is pre-selected.
+  const masterId = brand ? (brand.master?.id ?? brand.id) : null;
 
   const isOn = {
     home: pathname === "/",
     uploads: brandBase !== null && pathname === brandBase,
     system: brandBase !== null && pathname.startsWith(`${brandBase}/brain`),
     checks:
-      (brandBase !== null && pathname.startsWith(`${brandBase}/review`)) ||
+      (masterId !== null && pathname.startsWith(`/brands/${masterId}/review`)) ||
       pathname.startsWith("/reviews/"),
   };
 
@@ -58,9 +67,17 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
 
       {brand ? (
         <div className="hidden px-3 pb-5 md:block">
-          <p className="text-xs text-ink-muted">Brand</p>
+          <p className="text-xs text-ink-muted">{brand.kindLabel ?? "Brand"}</p>
           <p className="truncate text-sm font-semibold text-ink">{brand.name ?? "…"}</p>
-          {brand.version ? (
+          {brand.master ? (
+            <Link
+              to="/brands/$brandId/brain"
+              params={{ brandId: brand.master.id }}
+              className="block truncate text-xs text-brand hover:text-brand-deep"
+            >
+              under {brand.master.name}
+            </Link>
+          ) : brand.version ? (
             <p className="text-xs text-ink-muted">Brand model v{brand.version}</p>
           ) : null}
         </div>
@@ -84,13 +101,25 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
         label="Brand System"
         active={isOn.system}
       />
-      <BrandNavLink
-        brandId={brand?.id}
-        to="/brands/$brandId/review"
-        icon={CircleCheck}
-        label="Checks"
-        active={isOn.checks}
-      />
+      {masterId ? (
+        <Link
+          to="/brands/$brandId/review"
+          params={{ brandId: masterId }}
+          search={brand?.master ? { with: brand.id } : {}}
+          className={cn(navItem, "hover:bg-page hover:text-ink", isOn.checks && on)}
+        >
+          <NavIcon icon={CircleCheck} />
+          <span>Checks</span>
+        </Link>
+      ) : (
+        <BrandNavLink
+          brandId={undefined}
+          to="/brands/$brandId/review"
+          icon={CircleCheck}
+          label="Checks"
+          active={false}
+        />
+      )}
       <SoonItem icon={Activity} label="Activity" />
 
       <div className="hidden min-h-6 flex-1 md:block" />

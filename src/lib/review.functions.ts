@@ -24,24 +24,54 @@ async function loadCheck(checkId: string) {
     .maybeSingle();
   if (!check) throw new Error("That review could not be found.");
 
-  const { data: brand } = await supabase
-    .from("brands")
-    .select("id, name, current_version")
-    .eq("id", check.brand_id)
-    .maybeSingle();
+  // sub_brand_ids comes from migration 20261002230000; cast until types regenerate.
+  const subBrandIds = (check as { sub_brand_ids?: string[] | null }).sub_brand_ids ?? [];
+  const brandIds = [check.brand_id, ...subBrandIds.filter((id) => id !== check.brand_id)];
+
+  const { data: brands } = await supabase.from("brands").select("*").in("id", brandIds);
+  const brand = (brands ?? []).find((b) => b.id === check.brand_id) ?? null;
+  const subBrands = (brands ?? []).filter((b) => b.id !== check.brand_id);
+
+  // Where each rule comes from, so agents can apply the master brand's Musts
+  // over any sub-brand / product-line guideline.
+  const origin = new Map<string, string>([
+    [check.brand_id, `master brand ${brand?.name ?? ""}`.trim()],
+  ]);
+  for (const sub of subBrands) {
+    const kind = (sub as { kind?: string }).kind === "product_line" ? "product line" : "sub-brand";
+    origin.set(sub.id, `${kind} ${sub.name}`);
+  }
 
   const { data: rules } = await supabase
     .from("rules")
     .select(
-      "id, layer, rule_type, label, statement, value, severity, scope, time_scope, status, source_citation, context_tags(channel, format, audience, market, funnel_stage, objective, product, campaign)",
+      "id, brand_id, layer, rule_type, label, statement, value, severity, scope, time_scope, status, source_citation, context_tags(channel, format, audience, market, funnel_stage, objective, product, campaign)",
     )
-    .eq("brand_id", check.brand_id)
+    .in("brand_id", brandIds)
     .not("status", "in", "(archived,superseded)");
 
-  return { supabase, check, brand, rules: rules ?? [] };
+  return {
+    supabase,
+    check,
+    brand,
+    subBrands,
+    rules: (rules ?? []).map((r) => ({ ...r, origin: origin.get(r.brand_id) ?? "master brand" })),
+  };
 }
 
 type LoadedRule = Awaited<ReturnType<typeof loadCheck>>["rules"][number];
+
+/** "Nike" or "Nike + Air Max (product line)" for agent prompts. */
+function guidelineSetName(
+  brand: { name: string } | null,
+  subBrands: { name: string; kind?: string }[],
+) {
+  const base = brand?.name ?? "the brand";
+  if (subBrands.length === 0) return base;
+  return `${base} (master brand) + ${subBrands
+    .map((s) => `${s.name} (${s.kind === "product_line" ? "product line" : "sub-brand"})`)
+    .join(" + ")}`;
+}
 
 function ruleLines(rules: LoadedRule[]) {
   return rules
@@ -58,7 +88,7 @@ function ruleLines(rules: LoadedRule[]) {
             .join(","),
         )
         .join(" | ");
-      return `${r.id} | ${r.layer} | ${r.rule_type} | ${r.label} | ${r.statement ?? ""} | ${value} | ${r.severity} | ${r.scope} | ${r.time_scope} | ${r.status} | ${tags}`;
+      return `${r.id} | ${r.origin} | ${r.layer} | ${r.rule_type} | ${r.label} | ${r.statement ?? ""} | ${value} | ${r.severity} | ${r.scope} | ${r.time_scope} | ${r.status} | ${tags}`;
     })
     .join("\n");
 }
@@ -95,11 +125,11 @@ function creativeSummary(check: {
 export const checkReadiness = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ checkId: z.string() }).parse(input))
   .handler(async ({ data }) => {
-    const { supabase, check, brand, rules } = await loadCheck(data.checkId);
+    const { supabase, check, brand, subBrands, rules } = await loadCheck(data.checkId);
     const context = describeContext((check.creative_context ?? {}) as Record<string, unknown>);
 
     const resolution = await resolveContext({
-      brandName: brand?.name ?? "the brand",
+      brandName: guidelineSetName(brand, subBrands),
       context,
       creativeSummary: creativeSummary(check),
       rules: ruleLines(rules),
@@ -127,8 +157,8 @@ export const checkReadiness = createServerFn({ method: "POST" })
 export const runReview = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ checkId: z.string() }).parse(input))
   .handler(async ({ data }) => {
-    const { supabase, check, brand, rules } = await loadCheck(data.checkId);
-    const brandName = brand?.name ?? "the brand";
+    const { supabase, check, brand, subBrands, rules } = await loadCheck(data.checkId);
+    const brandName = guidelineSetName(brand, subBrands);
     const context = describeContext((check.creative_context ?? {}) as Record<string, unknown>);
 
     await supabase
@@ -174,7 +204,10 @@ export const runReview = createServerFn({ method: "POST" })
         brandName,
         context,
         rules: usedRules
-          .map((r) => `${r.id} | ${r.statement ?? r.label} | ${r.severity} | ${r.source_citation ?? ""}`)
+          .map(
+            (r) =>
+              `${r.id} | ${r.origin} | ${r.statement ?? r.label} | ${r.severity} | ${r.source_citation ?? ""}`,
+          )
           .join("\n"),
         copyText: check.copy_text ?? asset.text,
         briefText: check.brief_text,
@@ -191,7 +224,9 @@ export const runReview = createServerFn({ method: "POST" })
       });
 
       const ruleById = new Map(usedRules.map((r) => [r.id, r]));
-      const reasonById = new Map((applied.reasons ?? []).map((r) => [r.rule_id, r.applies_because]));
+      const reasonById = new Map(
+        (applied.reasons ?? []).map((r) => [r.rule_id, r.applies_because]),
+      );
 
       await supabase.from("findings").delete().eq("check_id", check.id);
       if (result.findings.length > 0) {
