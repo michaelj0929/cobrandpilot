@@ -1,15 +1,19 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
+  ChevronLeft,
+  ChevronRight,
   CircleCheck,
   House,
   LayoutGrid,
+  Menu,
   Settings,
   Upload,
   type LucideIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { displayName, useAuthUser } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -26,10 +30,10 @@ export type ShellBrand = {
   workspaceId?: string | null;
 };
 
-export function AppShell({ brand, children }: { brand?: ShellBrand; children: ReactNode }) {
+export function AppShell({ brand, workspaceId, children }: { brand?: ShellBrand; workspaceId?: string; children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-page md:flex-row">
-      <SideNav brand={brand} />
+      <SideNav brand={brand} workspaceId={workspaceId ?? brand?.workspaceId} />
       <main className="min-w-0 flex-1 px-[18px] py-7 md:px-14 md:pt-16 md:pb-12">
         <div className="mx-auto w-full max-w-[1040px]">{children}</div>
       </main>
@@ -40,15 +44,26 @@ export function AppShell({ brand, children }: { brand?: ShellBrand; children: Re
 const navItem =
   "flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-ink-muted transition-colors";
 
-function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
+function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; workspaceId?: string | null }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const user = useAuthUser();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => {
+    setCollapsed(window.localStorage.getItem("cobrand-nav-collapsed") === "true");
+  }, []);
+  const toggleCollapsed = () => {
+    setCollapsed((previous) => {
+      window.localStorage.setItem("cobrand-nav-collapsed", String(!previous));
+      return !previous;
+    });
+  };
   const brandBase = brand ? `/brands/${brand.id}` : null;
   // Checks always run on the master brand; a sub-brand is pre-selected.
   const masterId = brand ? (brand.master?.id ?? brand.id) : null;
 
   const isOn = {
-    home: pathname.startsWith("/workspaces"),
+    home: workspaceId ? pathname === `/workspaces/${workspaceId}` : pathname === "/workspaces" || pathname === "/workspaces/",
     settings: pathname.startsWith("/settings"),
     uploads: brandBase !== null && pathname === brandBase,
     system: brandBase !== null && pathname.startsWith(`${brandBase}/brain`),
@@ -57,21 +72,35 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
       pathname.startsWith("/reviews/"),
   };
 
+  const itemClass = (active: boolean) => cn(navItem, "hover:bg-page hover:text-ink", collapsed && "md:justify-center md:px-0", active && on);
+  const labelClass = cn(collapsed && "md:sr-only");
+
   return (
     <nav
       aria-label="Main"
-      className="flex flex-row flex-wrap gap-0.5 border-b border-line-soft bg-card p-4 md:sticky md:top-0 md:h-screen md:w-[236px] md:shrink-0 md:flex-col md:flex-nowrap md:border-r md:border-b-0 md:px-4 md:pt-8 md:pb-6"
+      className={cn("flex flex-col gap-0.5 border-b border-line-soft bg-card p-4 md:sticky md:top-0 md:h-screen md:shrink-0 md:border-r md:border-b-0 md:pt-8 md:pb-6 md:transition-[width,padding] md:duration-200", collapsed ? "md:w-[72px] md:px-3" : "md:w-[236px] md:px-4")}
     >
-      <Link
-        to="/workspaces"
-        aria-label="CoBrand home"
-        className="inline-flex w-full flex-col self-start px-3 pb-3 text-[26px] leading-[0.8] font-extrabold tracking-[-0.6px] text-ink md:w-auto md:pb-8"
-      >
-        <span>co</span>
-        <span>brand</span>
-      </Link>
+      <div className="flex items-start justify-between gap-1 pb-3 md:pb-8">
+        <Link
+          to="/workspaces"
+          aria-label="CoBrand home"
+          title="Workspaces"
+          className={cn("inline-flex flex-col self-start px-3 text-[26px] leading-[0.8] font-extrabold text-ink", collapsed && "md:px-1 md:text-xl")}
+        >
+          <span>co</span>
+          <span className={cn(collapsed && "md:sr-only")}>brand</span>
+        </Link>
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen} onClick={() => setMobileOpen((value) => !value)}>
+          <Menu aria-hidden />
+        </Button>
+        <Button variant="ghost" size="icon" className={cn("hidden shrink-0 md:inline-flex", collapsed && "absolute top-[80px] left-3")} aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} title={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={toggleCollapsed}>
+          {collapsed ? <ChevronRight aria-hidden /> : <ChevronLeft aria-hidden />}
+        </Button>
+      </div>
 
-      {brand ? (
+      <div className={cn("flex flex-col gap-0.5 md:flex md:min-h-0 md:flex-1", !mobileOpen && "hidden")} onClick={() => setMobileOpen(false)}>
+
+      {brand && !collapsed ? (
         <div className="hidden px-3 pb-5 md:block">
           <p className="text-xs text-ink-muted">{brand.kindLabel ?? "Brand"}</p>
           <p className="truncate text-sm font-semibold text-ink">{brand.name ?? "…"}</p>
@@ -89,30 +118,35 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
         </div>
       ) : null}
 
-      {brand?.workspaceId ? (
+      {workspaceId ? (
         <Link
           to="/workspaces/$workspaceId"
-          params={{ workspaceId: brand.workspaceId }}
-          className={cn(navItem, "hover:bg-page hover:text-ink", isOn.home && on)}
+          params={{ workspaceId }}
+          title="Home"
+          aria-label="Home"
+          className={itemClass(isOn.home)}
         >
           <NavIcon icon={House} />
-          <span>Home</span>
+          <span className={labelClass}>Home</span>
         </Link>
       ) : (
         <Link
           to="/workspaces"
-          className={cn(navItem, "hover:bg-page hover:text-ink", isOn.home && on)}
+          title="Workspaces"
+          aria-label="Workspaces"
+          className={itemClass(isOn.home)}
         >
           <NavIcon icon={House} />
-          <span>Home</span>
+          <span className={labelClass}>Workspaces</span>
         </Link>
       )}
-      <BrandNavLink
+      {workspaceId && brand ? <><BrandNavLink
         brandId={brand?.id}
         to="/brands/$brandId"
         icon={Upload}
         label="Uploads"
         active={isOn.uploads}
+        collapsed={collapsed}
       />
       <BrandNavLink
         brandId={brand?.id}
@@ -120,16 +154,19 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
         icon={LayoutGrid}
         label="Brand System"
         active={isOn.system}
+        collapsed={collapsed}
       />
       {masterId ? (
         <Link
           to="/brands/$brandId/review"
           params={{ brandId: masterId }}
           search={brand?.master ? { with: brand.id } : {}}
-          className={cn(navItem, "hover:bg-page hover:text-ink", isOn.checks && on)}
+          title="Checks"
+          aria-label="Checks"
+          className={itemClass(isOn.checks)}
         >
           <NavIcon icon={CircleCheck} />
-          <span>Checks</span>
+          <span className={labelClass}>Checks</span>
         </Link>
       ) : (
         <BrandNavLink
@@ -138,26 +175,30 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
           icon={CircleCheck}
           label="Checks"
           active={false}
+          collapsed={collapsed}
         />
       )}
-      <SoonItem icon={Activity} label="Activity" />
+      <SoonItem icon={Activity} label="Activity" collapsed={collapsed} /></> : null}
 
       <div className="hidden min-h-6 flex-1 md:block" />
 
       <Link
         to="/settings"
-        className={cn(navItem, "hover:bg-page hover:text-ink", isOn.settings && on)}
+        title="Settings"
+        aria-label="Settings"
+        className={itemClass(isOn.settings)}
       >
         <NavIcon icon={Settings} />
-        <span>Settings</span>
+        <span className={labelClass}>Settings</span>
       </Link>
       <Link
         to="/settings"
         aria-label="Your account"
-        className="mt-2.5 flex items-center gap-2.5 rounded-md border-line-soft px-3 pt-4 transition-colors hover:text-brand md:border-t"
+        title="Your account"
+        className={cn("mt-2.5 flex items-center gap-2.5 rounded-md border-line-soft px-3 pt-4 transition-colors hover:text-brand md:border-t", collapsed && "md:justify-center md:px-0")}
       >
         <UserAvatar user={user} />
-        <span className="hidden min-w-0 md:block">
+        <span className={cn("hidden min-w-0 md:block", collapsed && "md:sr-only")}>
           <b className="block truncate text-[13px] leading-[17px] font-semibold text-ink">
             {user ? displayName(user) : "…"}
           </b>
@@ -166,6 +207,7 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
           </small>
         </span>
       </Link>
+      </div>
     </nav>
   );
 }
@@ -182,22 +224,25 @@ function BrandNavLink({
   icon,
   label,
   active,
+  collapsed,
 }: {
   brandId: string | undefined;
   to: "/brands/$brandId" | "/brands/$brandId/brain" | "/brands/$brandId/review";
   icon: LucideIcon;
   label: string;
   active: boolean;
+  collapsed: boolean;
 }) {
   if (!brandId) {
     return (
       <span
         aria-disabled
         title="Open a brand first"
-        className={cn(navItem, "cursor-not-allowed opacity-60")}
+        className={cn(navItem, "cursor-not-allowed opacity-60", collapsed && "md:justify-center md:px-0")}
+        title={label}
       >
         <NavIcon icon={icon} />
-        <span>{label}</span>
+        <span className={cn(collapsed && "md:sr-only")}>{label}</span>
       </span>
     );
   }
@@ -205,21 +250,23 @@ function BrandNavLink({
     <Link
       to={to}
       params={{ brandId }}
-      className={cn(navItem, "hover:bg-page hover:text-ink", active && on)}
+      title={label}
+      aria-label={label}
+      className={cn(navItem, "hover:bg-page hover:text-ink", collapsed && "md:justify-center md:px-0", active && on)}
     >
       <NavIcon icon={icon} />
-      <span>{label}</span>
+      <span className={cn(collapsed && "md:sr-only")}>{label}</span>
     </Link>
   );
 }
 
 /** Placeholder for a section that doesn't exist yet. */
-function SoonItem({ icon, label }: { icon: LucideIcon; label: string }) {
+function SoonItem({ icon, label, collapsed }: { icon: LucideIcon; label: string; collapsed: boolean }) {
   return (
-    <span aria-disabled className={cn(navItem, "cursor-not-allowed")}>
+    <span aria-disabled title={`${label} (soon)`} className={cn(navItem, "cursor-not-allowed", collapsed && "md:justify-center md:px-0")}>
       <NavIcon icon={icon} />
-      <span className="opacity-70">{label}</span>
-      <span className="ml-auto rounded-full bg-page px-2 text-[11px] leading-5 font-semibold text-ink-muted">
+      <span className={cn("opacity-70", collapsed && "md:sr-only")}>{label}</span>
+      <span className={cn("ml-auto rounded-full bg-page px-2 text-[11px] leading-5 font-semibold text-ink-muted", collapsed && "md:hidden")}>
         soon
       </span>
     </span>
