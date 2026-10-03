@@ -334,6 +334,17 @@
   letter-spacing: -0.5px;
 }
 
+/* Illustrations float gently (6px, ~3s). */
+@keyframes cb-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 /* Motion: drilling into detail should feel like zooming, not jumping. */
 @keyframes zoom-in-view {
   from {

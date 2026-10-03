@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
-import { Empty, StateBadge } from "@/components/app-shell";
+import { Upload } from "lucide-react";
+
+import { Empty, PageHead, SectionHead, StateBadge } from "@/components/app-shell";
+import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -172,218 +175,273 @@ function SourcesAndGaps() {
 
   const openGaps = (gaps.data ?? []).filter((g) => !g.resolved);
 
+  // Real stages of the add-material flow, read from the busy message.
+  const adding = upload.isPending || paste.isPending;
+  const stage = busy?.startsWith("Checking") ? 2 : busy?.startsWith("Reading") ? 1 : 0;
+  const addSteps: Step[] = [
+    "Adding your material",
+    "Reading and extracting rules",
+    "Checking for gaps",
+  ].map((label, i) => ({ label, state: i < stage ? "done" : i === stage ? "live" : "waiting" }));
+
   return (
-    <div className="grid gap-16 lg:grid-cols-[1.2fr_1fr]">
-      <section>
-        <h2 className="text-2xl">Brand materials</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Guidelines, strategy decks, campaign rules, approved work. PDF, PowerPoint, Word, images,
-          SVG logos or pasted text. Up to {MAX_FILES_PER_PASS} files at a time, 25 MB each.
-        </p>
+    <>
+      <PageHead
+        title="Brand materials"
+        description={`Guidelines, strategy decks, campaign rules, approved work. PDF, PowerPoint, Word, images, SVG logos or pasted text. Up to ${MAX_FILES_PER_PASS} files at a time, 25 MB each.`}
+      />
 
-        <div className="mt-5 surface p-6">
-          <div className="grid gap-1.5">
-            <Label>What is this material?</Label>
-            <Select value={classification} onValueChange={setClassification}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Let CoBrand decide</SelectItem>
-                {CLASSIFICATIONS.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_1fr]">
+        <section className="flex flex-col gap-5">
+          <div className="surface flex flex-col gap-5 px-6 py-[22px]">
+            <div className="grid max-w-sm gap-1.5">
+              <Label>What is this material?</Label>
+              <Select value={classification} onValueChange={setClassification}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Let CoBrand decide</SelectItem>
+                  {CLASSIFICATIONS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <input
-            ref={fileInput}
-            type="file"
-            multiple
-            accept={ACCEPTED_TYPES}
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.length) upload.mutate(e.target.files);
-              e.target.value = "";
-            }}
-          />
-          <Button
-            className="mt-4"
-            disabled={!!busy}
-            onClick={() => fileInput.current?.click()}
-          >
-            Upload files
-          </Button>
-
-          <div className="mt-6 border-t border-border pt-5">
-            <Label htmlFor="paste-title">Or paste text</Label>
-            <Input
-              id="paste-title"
-              className="mt-1.5"
-              placeholder="Title, e.g. Tone of voice notes"
-              value={pasteTitle}
-              onChange={(e) => setPasteTitle(e.target.value)}
+            <input
+              ref={fileInput}
+              type="file"
+              multiple
+              accept={ACCEPTED_TYPES}
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.length) upload.mutate(e.target.files);
+                e.target.value = "";
+              }}
             />
-            <Textarea
-              className="mt-2"
-              rows={4}
-              placeholder="Paste guideline text, messaging, do's and don'ts…"
-              value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
-            />
-            <Button
-              variant="secondary"
-              className="mt-3"
-              disabled={!!busy || pasteText.trim().length < 20}
-              onClick={() => paste.mutate()}
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={() => fileInput.current?.click()}
+              className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-[1.5px] border-dashed border-brand-soft bg-card px-6 py-8 text-center transition-colors hover:bg-brand-tint/40 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Add pasted text
-            </Button>
+              <span className="flex size-[68px] items-center justify-center rounded-full bg-brand-tint text-brand">
+                <Upload aria-hidden className="size-7" strokeWidth={2} />
+              </span>
+              <span className="text-base leading-[22px] font-semibold">Upload files</span>
+              <span className="text-[13px] text-ink-muted">
+                <span className="font-semibold text-brand underline underline-offset-[3px]">
+                  browse files
+                </span>{" "}
+                · PDF, PowerPoint, Word, images or SVG
+              </span>
+            </button>
+
+            <div className="flex flex-col gap-1.5 border-t border-line-soft pt-5">
+              <Label htmlFor="paste-title">Or paste text</Label>
+              <Input
+                id="paste-title"
+                placeholder="Title, e.g. Tone of voice notes"
+                value={pasteTitle}
+                onChange={(e) => setPasteTitle(e.target.value)}
+              />
+              <Textarea
+                className="mt-1"
+                rows={4}
+                placeholder="Paste guideline text, messaging, do's and don'ts…"
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+              />
+              <Button
+                variant="secondary"
+                className="mt-2 self-start"
+                disabled={!!busy || pasteText.trim().length < 20}
+                onClick={() => paste.mutate()}
+              >
+                Add pasted text
+              </Button>
+            </div>
+
+            {busy && !adding ? <BusyLine text={busy} /> : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
 
-          {busy ? <p className="mt-4 text-sm text-muted-foreground">{busy}</p> : null}
-          {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
-        </div>
-
-        <div className="mt-8 space-y-4">
           {(sources.data ?? []).length === 0 ? (
             <Empty
               title="No materials yet"
               body="CoBrand cannot invent brand truth. Everything it knows comes from what you upload here."
             />
           ) : (
-            (sources.data ?? []).map((source) => (
-              <div key={source.id} className="surface p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{source.file_name}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {source.classification ?? "Unclassified"} · {source.status}
-                      {source.status === "done" ? ` · ${source.rules_extracted} rules` : ""}
-                    </p>
-                    {source.classification_rationale ? (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {source.classification_rationale}
+            <div className="surface px-6 py-[22px]">
+              <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Uploaded materials</h2>
+              <ul className="mt-1.5">
+                {(sources.data ?? []).map((source) => (
+                  <li
+                    key={source.id}
+                    className="flex items-start justify-between gap-3 border-t border-line-soft py-3.5 first:border-t-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{source.file_name}</p>
+                      <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+                        <SourceStatus status={source.status} />
+                        <span>{source.classification ?? "Unclassified"}</span>
+                        {source.status === "done" ? (
+                          <span>· {source.rules_extracted} rules</span>
+                        ) : null}
                       </p>
-                    ) : null}
-                    {source.error ? (
-                      <p className="mt-2 text-xs text-destructive">{source.error}</p>
-                    ) : null}
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    {source.status !== "done" ? (
+                      {source.classification_rationale ? (
+                        <p className="mt-2 text-xs text-ink-muted">
+                          {source.classification_rationale}
+                        </p>
+                      ) : null}
+                      {source.error ? (
+                        <p className="mt-2 text-xs text-destructive">{source.error}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      {source.status !== "done" ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={!!busy}
+                          onClick={() => {
+                            setBusy(`Reading ${source.file_name}…`);
+                            processSource(source.id, source.file_name)
+                              .catch((e) => setError((e as Error).message))
+                              .finally(() => setBusy(null));
+                          }}
+                        >
+                          Retry
+                        </Button>
+                      ) : null}
                       <Button
                         size="sm"
-                        variant="secondary"
-                        disabled={!!busy}
-                        onClick={() => {
-                          setBusy(`Reading ${source.file_name}…`);
-                          processSource(source.id, source.file_name)
-                            .catch((e) => setError((e as Error).message))
-                            .finally(() => setBusy(null));
-                        }}
+                        variant="ghost"
+                        onClick={() => removeSource.mutate(source.id)}
                       >
-                        Retry
-                      </Button>
-                    ) : null}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeSource.mutate(source.id)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-2xl">Setup gaps</h2>
-          <Button size="sm" variant="secondary" disabled={!!busy} onClick={() => recheck.mutate()}>
-            Re-check
-          </Button>
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          What the brand model is missing or too vague about. These stay visible until they are
-          answered — CoBrand will not guess.
-        </p>
-
-        <div className="mt-7 space-y-4">
-          {openGaps.length === 0 ? (
-            <Empty
-              title="Nothing outstanding"
-              body="Once materials are ingested, anything missing or vague appears here."
-            />
-          ) : (
-            openGaps.map((gap) => (
-              <div key={gap.id} className="surface p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-medium">{gap.topic}</p>
-                  <StateBadge state={gap.gap_type} />
-                </div>
-                {gap.why_it_matters ? (
-                  <p className="mt-1.5 text-sm text-muted-foreground">{gap.why_it_matters}</p>
-                ) : null}
-                {gap.source_note ? (
-                  <p className="mt-1.5 text-xs text-muted-foreground">{gap.source_note}</p>
-                ) : null}
-
-                {answering === gap.id ? (
-                  <div className="mt-3">
-                    <Textarea
-                      rows={3}
-                      autoFocus
-                      placeholder="Write the answer in your own words…"
-                      value={answer}
-                      onChange={(e) => setAnswer(e.target.value)}
-                    />
-                    <div className="mt-2 flex gap-2">
-                      <Button
-                        size="sm"
-                        disabled={!!busy || answer.trim().length < 3}
-                        onClick={() => answerGap.mutate(gap)}
-                      >
-                        Save as brand truth
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setAnswering(null)}>
-                        Cancel
+                        Remove
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setAnswering(gap.id);
-                        setAnswer("");
-                      }}
-                    >
-                      Answer it
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={!!busy}
-                      onClick={() => proposeFor.mutate(gap.id)}
-                    >
-                      Let CoBrand propose
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
-        </div>
-      </section>
-    </div>
+        </section>
+
+        <section className="flex flex-col gap-5">
+          {adding ? (
+            <LoadingPanel title={busy ?? "Adding your material…"}>
+              <StepList steps={addSteps} />
+            </LoadingPanel>
+          ) : null}
+
+          <div>
+            <SectionHead
+              title="Setup gaps"
+              description="What the brand model is missing or too vague about. These stay visible until they are answered — CoBrand will not guess."
+              actions={
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!!busy}
+                  onClick={() => recheck.mutate()}
+                >
+                  Re-check
+                </Button>
+              }
+            />
+
+            <div className="flex flex-col gap-3">
+              {openGaps.length === 0 ? (
+                <Empty
+                  title="Nothing outstanding"
+                  body="Once materials are ingested, anything missing or vague appears here."
+                />
+              ) : (
+                openGaps.map((gap) => (
+                  <div key={gap.id} className="surface px-6 py-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-semibold">{gap.topic}</p>
+                      <StateBadge state={gap.gap_type} />
+                    </div>
+                    {gap.why_it_matters ? (
+                      <p className="mt-1.5 text-sm text-ink-muted">{gap.why_it_matters}</p>
+                    ) : null}
+                    {gap.source_note ? (
+                      <p className="mt-1.5 text-xs text-ink-muted">{gap.source_note}</p>
+                    ) : null}
+
+                    {answering === gap.id ? (
+                      <div className="mt-3">
+                        <Textarea
+                          rows={3}
+                          autoFocus
+                          placeholder="Write the answer in your own words…"
+                          value={answer}
+                          onChange={(e) => setAnswer(e.target.value)}
+                        />
+                        <div className="mt-3 flex gap-2">
+                          <Button
+                            size="sm"
+                            disabled={!!busy || answer.trim().length < 3}
+                            onClick={() => answerGap.mutate(gap)}
+                          >
+                            Save as brand truth
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setAnswering(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-3.5 flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setAnswering(gap.id);
+                            setAnswer("");
+                          }}
+                        >
+                          Answer it
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="quiet"
+                          disabled={!!busy}
+                          onClick={() => proposeFor.mutate(gap.id)}
+                        >
+                          Let CoBrand propose
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
+  );
+}
+
+function SourceStatus({ status }: { status: string }) {
+  const tone =
+    status === "done"
+      ? "bg-green-tint text-green"
+      : status === "failed"
+        ? "bg-[var(--missing)]/10 text-[var(--missing)]"
+        : "bg-attention text-ink";
+  return (
+    <span
+      className={`inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold ${tone}`}
+    >
+      {status}
+    </span>
   );
 }
