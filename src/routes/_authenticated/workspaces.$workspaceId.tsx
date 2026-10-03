@@ -80,6 +80,7 @@ function Dashboard() {
         name: master.name,
         version: master.current_version,
         kindLabel: "Master brand",
+        workspaceId,
       }}
     >
       <PageHead

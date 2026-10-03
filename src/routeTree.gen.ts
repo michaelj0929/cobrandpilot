@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedBrandsBrandIdRouteImport } from './routes/_authenticated/brands.$brandId'
 import { Route as AuthenticatedReviewsCheckIdRouteImport } from './routes/_authenticated/reviews.$checkId'
+import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_authenticated/workspaces.index'
 import { Route as AuthenticatedWorkspacesWorkspaceIdRouteImport } from './routes/_authenticated/workspaces.$workspaceId'
 import { Route as AuthenticatedBrandsBrandIdIndexRouteImport } from './routes/_authenticated/brands.$brandId.index'
 import { Route as AuthenticatedBrandsBrandIdBrainRouteImport } from './routes/_authenticated/brands.$brandId.brain'
@@ -33,6 +35,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBrandsBrandIdRoute =
   AuthenticatedBrandsBrandIdRouteImport.update({
     id: '/brands/$brandId',
@@ -43,6 +50,12 @@ const AuthenticatedReviewsCheckIdRoute =
   AuthenticatedReviewsCheckIdRouteImport.update({
     id: '/reviews/$checkId',
     path: '/reviews/$checkId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkspacesIndexRoute =
+  AuthenticatedWorkspacesIndexRouteImport.update({
+    id: '/workspaces/',
+    path: '/workspaces/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedWorkspacesWorkspaceIdRoute =
@@ -73,9 +86,11 @@ const AuthenticatedBrandsBrandIdReviewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/brands/$brandId': typeof AuthenticatedBrandsBrandIdRouteWithChildren
   '/reviews/$checkId': typeof AuthenticatedReviewsCheckIdRoute
   '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
   '/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
   '/brands/$brandId/': typeof AuthenticatedBrandsBrandIdIndexRoute
@@ -83,8 +98,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/reviews/$checkId': typeof AuthenticatedReviewsCheckIdRoute
   '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
   '/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
   '/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
   '/brands/$brandId': typeof AuthenticatedBrandsBrandIdIndexRoute
@@ -94,9 +111,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/brands/$brandId': typeof AuthenticatedBrandsBrandIdRouteWithChildren
   '/_authenticated/reviews/$checkId': typeof AuthenticatedReviewsCheckIdRoute
   '/_authenticated/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/_authenticated/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
   '/_authenticated/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
   '/_authenticated/brands/$brandId/': typeof AuthenticatedBrandsBrandIdIndexRoute
@@ -106,9 +125,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/settings'
     | '/brands/$brandId'
     | '/reviews/$checkId'
     | '/workspaces/$workspaceId'
+    | '/workspaces/'
     | '/brands/$brandId/brain'
     | '/brands/$brandId/review'
     | '/brands/$brandId/'
@@ -116,8 +137,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/settings'
     | '/reviews/$checkId'
     | '/workspaces/$workspaceId'
+    | '/workspaces'
     | '/brands/$brandId/brain'
     | '/brands/$brandId/review'
     | '/brands/$brandId'
@@ -126,9 +149,11 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/settings'
     | '/_authenticated/brands/$brandId'
     | '/_authenticated/reviews/$checkId'
     | '/_authenticated/workspaces/$workspaceId'
+    | '/_authenticated/workspaces/'
     | '/_authenticated/brands/$brandId/brain'
     | '/_authenticated/brands/$brandId/review'
     | '/_authenticated/brands/$brandId/'
@@ -163,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/brands/$brandId': {
       id: '/_authenticated/brands/$brandId'
       path: '/brands/$brandId'
@@ -175,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/reviews/$checkId'
       fullPath: '/reviews/$checkId'
       preLoaderRoute: typeof AuthenticatedReviewsCheckIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workspaces/': {
+      id: '/_authenticated/workspaces/'
+      path: '/workspaces'
+      fullPath: '/workspaces/'
+      preLoaderRoute: typeof AuthenticatedWorkspacesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/workspaces/$workspaceId': {
@@ -228,16 +267,20 @@ const AuthenticatedBrandsBrandIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedBrandsBrandIdRoute: typeof AuthenticatedBrandsBrandIdRouteWithChildren
   AuthenticatedReviewsCheckIdRoute: typeof AuthenticatedReviewsCheckIdRoute
   AuthenticatedWorkspacesWorkspaceIdRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  AuthenticatedWorkspacesIndexRoute: typeof AuthenticatedWorkspacesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedBrandsBrandIdRoute: AuthenticatedBrandsBrandIdRouteWithChildren,
   AuthenticatedReviewsCheckIdRoute: AuthenticatedReviewsCheckIdRoute,
   AuthenticatedWorkspacesWorkspaceIdRoute:
     AuthenticatedWorkspacesWorkspaceIdRoute,
+  AuthenticatedWorkspacesIndexRoute: AuthenticatedWorkspacesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -39,6 +39,7 @@ function BrandLayout() {
         id: brandId,
         name: brand.data?.name ?? null,
         version: brand.data?.current_version ?? null,
+        workspaceId: brand.data?.workspace_id ?? null,
         kindLabel: brand.data ? BRAND_KIND_LABEL[brand.data.kind] : null,
         master: parentId && master.data ? { id: master.data.id, name: master.data.name } : null,
       }}
