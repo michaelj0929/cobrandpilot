@@ -72,7 +72,7 @@ export function ScoreRing({
 /** A real colour chip rather than a hex string. */
 export function Swatch({ hex, name, note }: { hex: string; name: string; note?: string }) {
   return (
-    <figure className="surface surface-hover overflow-hidden">
+    <figure className="overflow-hidden rounded-md border border-line-soft bg-card">
       <div className="h-24 w-full" style={{ backgroundColor: hex }} aria-hidden />
       <figcaption className="px-4 py-3">
         <p className="text-sm font-semibold">{name}</p>
@@ -96,7 +96,7 @@ export function TypeSpecimen({
   useLoadFont(family);
   const stack = `"${family}", var(--font-sans)`;
   return (
-    <figure className="surface surface-hover px-5 py-5">
+    <figure className="rounded-md border border-line-soft bg-card px-5 py-5">
       <p className="truncate leading-none" style={{ fontFamily: stack, fontSize: "2.5rem" }}>
         Aa Bb Cc
       </p>

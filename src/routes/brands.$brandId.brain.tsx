@@ -1,9 +1,10 @@
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { ArrowRight, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Empty, StateBadge } from "@/components/app-shell";
+import { Empty, PageHead, StateBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Swatch, TypeSpecimen, Meter, fontFamilyOf } from "@/components/visuals";
+import { Swatch, TypeSpecimen, fontFamilyOf } from "@/components/visuals";
 import {
   LAYER_BLURB,
   LAYER_LABEL,
@@ -28,8 +29,6 @@ import {
   type ProposedEdits,
 } from "@/lib/cobrand-client";
 import { applyEdits, confirmRule, draftEdits, saveRule } from "@/lib/cobrand.functions";
-
-
 
 export const Route = createFileRoute("/brands/$brandId/brain")({
   head: () => ({
@@ -148,219 +147,251 @@ function BrandBrain() {
     onError: (e) => setError((e as Error).message),
   });
 
+  const confirmedPct = counts.total ? (counts.confirmed / counts.total) * 100 : 0;
+
   return (
-    <div className="grid gap-16 lg:grid-cols-[1fr_320px]">
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          {LAYERS.map((l) => (
-            <button
-              key={l}
-              onClick={() => setLayer(l)}
-              className={`rounded-full px-4 py-1.5 text-sm transition-all duration-300 ${
-                layer === l
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {LAYER_LABEL[l]}
-            </button>
-          ))}
-          <div className="ml-auto w-44">
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="h-9 border-transparent bg-muted/60 shadow-none">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Everything</SelectItem>
-                <SelectItem value="confirmed">Confirmed only</SelectItem>
-                <SelectItem value="review">Needs review</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          {LAYER_BLURB[layer]}
-        </p>
-
-        {layerGaps.length > 0 ? (
-          <div className="mt-8 rounded-[var(--radius)] border border-dashed border-[var(--missing)]/30 bg-[var(--missing)]/[0.04] px-5 py-4">
-            <p className="text-sm font-medium">Still missing in {LAYER_LABEL[layer]}</p>
-            <ul className="mt-2.5 space-y-1.5 text-sm text-muted-foreground">
-              {layerGaps.map((gap) => (
-                <li key={gap.id}>
-                  {gap.topic} — {gap.gap_type === "vague" ? "too vague to check against" : "not found"}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <div key={layer} className="view-enter mt-12 space-y-14">
-          {grouped.length === 0 ? (
-            <Empty
-              title="Nothing here yet"
-              body="Upload brand materials and CoBrand will fill this layer in."
-            />
-          ) : (
-            grouped.map(([type, typeRules]) => (
-              <section key={type}>
-                <p className="eyebrow mb-5">{type.replace(/_/g, " ")}</p>
-
-                {type === "color" ? (
-                  <div className="mb-6 grid gap-4 sm:grid-cols-3">
-                    {typeRules
-                      .filter((r) => isColor(ruleValue(r.value)))
-                      .map((r) => (
-                        <Swatch
-                          key={`sw-${r.id}`}
-                          hex={ruleValue(r.value).trim()}
-                          name={r.label}
-                          {...(r.statement ? { note: r.statement } : {})}
-                        />
-                      ))}
-                  </div>
-                ) : null}
-
-                {type === "typography" ? (
-                  <div className="mb-6 grid gap-4 sm:grid-cols-2">
-                    {typeRules.map((r) => {
-                      const family = fontFamilyOf(r);
-                      return family ? (
-                        <TypeSpecimen
-                          key={`ts-${r.id}`}
-                          family={family}
-                          name={r.label}
-                          {...(r.statement ? { note: r.statement } : {})}
-                        />
-                      ) : null;
-                    })}
-                  </div>
-                ) : null}
-
-                <div className="space-y-3">
-
-                  {typeRules.map((rule) => (
-                    <RuleCard
-                      key={rule.id}
-                      rule={rule}
-                      open={openRule === rule.id}
-                      onToggle={() => setOpenRule(openRule === rule.id ? null : rule.id)}
-                      onSave={async (values) => {
-                        await save({ data: { ruleId: rule.id, brandId, ...values } });
-                        refresh();
-                      }}
-                      onConfirm={async () => {
-                        await confirm({ data: { ruleId: rule.id, brandId, label: rule.label } });
-                        refresh();
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))
-          )}
-        </div>
+    <>
+      <PageHead
+        title="Brand Brain"
+        description="Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
+      />
+      <div className="mb-7 flex flex-wrap items-center gap-3">
+        <Button asChild variant="secondary">
+          <Link to="/brands/$brandId/review" params={{ brandId }}>
+            <ArrowRight aria-hidden />
+            Review creative
+          </Link>
+        </Button>
+        <Button asChild variant="secondary">
+          <Link to="/brands/$brandId" params={{ brandId }}>
+            <Upload aria-hidden />
+            Add more materials
+          </Link>
+        </Button>
       </div>
 
-      <aside className="space-y-10 lg:sticky lg:top-28 lg:self-start">
-        <div>
-          <p className="eyebrow">Model status</p>
-          <p className="display mt-3 text-[2.5rem] leading-none">{counts.total}</p>
-          <p className="mt-1 text-sm text-muted-foreground">rules held about this brand</p>
-          <div className="mt-5">
-            <Meter
-              value={counts.total ? (counts.confirmed / counts.total) * 100 : 0}
-              tone="var(--confirmed)"
-            />
-            <p className="mt-2.5 text-xs text-muted-foreground">
-              {counts.confirmed} confirmed · {counts.review} awaiting review
-            </p>
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {LAYERS.map((l) => (
+              <button
+                key={l}
+                onClick={() => setLayer(l)}
+                aria-pressed={layer === l}
+                className={`min-h-10 cursor-pointer rounded-md px-4 text-sm transition-colors ${
+                  layer === l
+                    ? "bg-brand-tint font-semibold text-brand"
+                    : "font-medium text-ink-muted hover:bg-card hover:text-ink"
+                }`}
+              >
+                {LAYER_LABEL[l]}
+              </button>
+            ))}
+            <div className="ml-auto w-44">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Everything</SelectItem>
+                  <SelectItem value="confirmed">Confirmed only</SelectItem>
+                  <SelectItem value="review">Needs review</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <p className="max-w-xl text-sm text-ink-muted">{LAYER_BLURB[layer]}</p>
+
+          {layerGaps.length > 0 ? (
+            <div className="flex items-start gap-3 rounded-lg bg-yellow-tint px-4 py-3.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-attention text-ink">
+                <TriangleAlert aria-hidden className="size-[18px]" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Still missing in {LAYER_LABEL[layer]}</p>
+                <ul className="mt-1 space-y-1 text-sm">
+                  {layerGaps.map((gap) => (
+                    <li key={gap.id}>
+                      {gap.topic} —{" "}
+                      {gap.gap_type === "vague" ? "too vague to check against" : "not found"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : null}
+
+          <div key={layer} className="view-enter flex flex-col gap-5">
+            {grouped.length === 0 ? (
+              <Empty
+                title="Nothing here yet"
+                body="Upload brand materials and CoBrand will fill this layer in."
+              />
+            ) : (
+              grouped.map(([type, typeRules]) => (
+                <section key={type} className="surface px-6 py-[22px]">
+                  <h2 className="text-[13px] leading-[18px] tracking-[0.2px] lowercase">
+                    {type.replace(/_/g, " ")}
+                  </h2>
+
+                  {type === "color" ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      {typeRules
+                        .filter((r) => isColor(ruleValue(r.value)))
+                        .map((r) => (
+                          <Swatch
+                            key={`sw-${r.id}`}
+                            hex={ruleValue(r.value).trim()}
+                            name={r.label}
+                            {...(r.statement ? { note: r.statement } : {})}
+                          />
+                        ))}
+                    </div>
+                  ) : null}
+
+                  {type === "typography" ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {typeRules.map((r) => {
+                        const family = fontFamilyOf(r);
+                        return family ? (
+                          <TypeSpecimen
+                            key={`ts-${r.id}`}
+                            family={family}
+                            name={r.label}
+                            {...(r.statement ? { note: r.statement } : {})}
+                          />
+                        ) : null;
+                      })}
+                    </div>
+                  ) : null}
+
+                  <ul className="mt-2">
+                    {typeRules.map((rule) => (
+                      <RuleCard
+                        key={rule.id}
+                        rule={rule}
+                        open={openRule === rule.id}
+                        onToggle={() => setOpenRule(openRule === rule.id ? null : rule.id)}
+                        onSave={async (values) => {
+                          await save({ data: { ruleId: rule.id, brandId, ...values } });
+                          refresh();
+                        }}
+                        onConfirm={async () => {
+                          await confirm({ data: { ruleId: rule.id, brandId, label: rule.label } });
+                          refresh();
+                        }}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
           </div>
         </div>
 
-        <div className="surface p-6">
-          <p className="eyebrow">Change it in plain language</p>
-          <Textarea
-            className="mt-4 border-transparent bg-muted/50 shadow-none"
-            rows={3}
-            placeholder='e.g. "Our primary blue is #0B3D91, not #0A47A1"'
-            value={request}
-            onChange={(e) => setRequest(e.target.value)}
-          />
-          <Button
-            className="mt-4"
-            size="sm"
-            disabled={busy || request.trim().length < 5}
-            onClick={() => askDraft.mutate()}
-          >
-            {busy ? "Thinking…" : "Propose change"}
-          </Button>
-
-          {diff ? (
-            <div className="reveal-enter mt-5 border-t border-border/60 pt-5">
-              <p className="text-sm">{diff.understood}</p>
-              {diff.question ? (
-                <p className="mt-2 text-xs text-muted-foreground">{diff.question}</p>
-              ) : null}
-              <ul className="mt-4 space-y-2.5 text-sm">
-                {diff.changes.map((change, i) => (
-                  <li
-                    key={i}
-                    className="rounded-[calc(var(--radius)-4px)] bg-muted/50 px-3 py-2.5"
-                  >
-                    <p className="eyebrow text-[10px]">
-                      {change.action} · {change.field}
-                    </p>
-                    <p className="mt-1.5 font-medium">{change.label}</p>
-                    {change.old_value ? (
-                      <p className="text-xs text-muted-foreground line-through">
-                        {change.old_value}
-                      </p>
-                    ) : null}
-                    <p className="text-xs">{change.new_value}</p>
-                  </li>
-                ))}
-              </ul>
-              {diff.changes.length > 0 ? (
-                <div className="mt-4 flex gap-2">
-                  <Button size="sm" disabled={busy} onClick={() => applyDiff.mutate()}>
-                    Apply changes
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setDiff(null)}>
-                    Discard
-                  </Button>
-                </div>
-              ) : null}
+        <aside className="flex flex-col gap-5 lg:sticky lg:top-8">
+          <section className="rounded-lg bg-brand-tint px-6 py-[22px]">
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Model status</h2>
+            <p className="stat mt-1">{counts.total}</p>
+            <p className="text-[13px] text-ink">rules held about this brand</p>
+            <div
+              className="mt-4 h-2 w-full overflow-hidden rounded-full bg-brand-soft"
+              role="progressbar"
+              aria-label="Confirmed rules"
+              aria-valuenow={Math.round(confirmedPct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full bg-brand transition-[width] duration-700"
+                style={{ width: `${confirmedPct}%` }}
+              />
             </div>
-          ) : null}
-          {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
-        </div>
+            <p className="mt-3 border-t border-brand-soft pt-3 text-[13px] font-semibold text-brand">
+              {counts.confirmed} confirmed · {counts.review} awaiting review
+            </p>
+          </section>
 
-        <div>
-          <p className="eyebrow">History</p>
-          <ul className="mt-4 space-y-5 text-sm">
-            {(versions.data ?? []).slice(0, 10).map((version) => (
-              <li key={version.id} className="border-l border-border pl-4">
-                <p className="font-medium">v{version.version}</p>
-                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                  {version.diff_summary}
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {new Date(version.created_at).toLocaleString()} · via {version.edited_via}
-                </p>
-              </li>
-            ))}
-            {(versions.data ?? []).length === 0 ? (
-              <li className="text-xs text-muted-foreground">No changes recorded yet.</li>
+          <section className="surface px-6 py-[22px]">
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">
+              Change it in plain language
+            </h2>
+            <Textarea
+              className="mt-3"
+              rows={3}
+              placeholder='e.g. "Our primary blue is #0B3D91, not #0A47A1"'
+              value={request}
+              onChange={(e) => setRequest(e.target.value)}
+            />
+            <Button
+              className="mt-3"
+              size="sm"
+              disabled={busy || request.trim().length < 5}
+              onClick={() => askDraft.mutate()}
+            >
+              {busy ? "Thinking…" : "Propose change"}
+            </Button>
+
+            {diff ? (
+              <div className="reveal-enter mt-5 border-t border-line-soft pt-5">
+                <p className="text-sm">{diff.understood}</p>
+                {diff.question ? (
+                  <p className="mt-2 text-xs text-ink-muted">{diff.question}</p>
+                ) : null}
+                <ul className="mt-4 space-y-2.5 text-sm">
+                  {diff.changes.map((change, i) => (
+                    <li key={i} className="rounded-md bg-page px-3.5 py-3">
+                      <p className="text-[11px] font-semibold text-ink-muted lowercase">
+                        {change.action} · {change.field}
+                      </p>
+                      <p className="mt-1 font-semibold">{change.label}</p>
+                      {change.old_value ? (
+                        <p className="text-xs text-ink-muted line-through">{change.old_value}</p>
+                      ) : null}
+                      <p className="text-xs">{change.new_value}</p>
+                    </li>
+                  ))}
+                </ul>
+                {diff.changes.length > 0 ? (
+                  <div className="mt-4 flex gap-2">
+                    <Button size="sm" disabled={busy} onClick={() => applyDiff.mutate()}>
+                      Apply changes
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDiff(null)}>
+                      Discard
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             ) : null}
-          </ul>
-        </div>
-      </aside>
+            {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
+          </section>
 
-    </div>
+          <section className="surface px-6 py-[22px]">
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">History</h2>
+            <ul className="mt-1.5">
+              {(versions.data ?? []).slice(0, 10).map((version) => (
+                <li
+                  key={version.id}
+                  className="border-t border-line-soft py-3 text-sm first:border-t-0"
+                >
+                  <p className="font-semibold">v{version.version}</p>
+                  <p className="mt-0.5 text-xs text-ink">{version.diff_summary}</p>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    {new Date(version.created_at).toLocaleString()} · via {version.edited_via}
+                  </p>
+                </li>
+              ))}
+              {(versions.data ?? []).length === 0 ? (
+                <li className="py-3 text-xs text-ink-muted">No changes recorded yet.</li>
+              ) : null}
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </>
   );
 }
-
 function RuleCard({
   rule,
   open,
@@ -390,73 +421,69 @@ function RuleCard({
   const raw = ruleValue(rule.value);
 
   return (
-    <div
-      className={`surface px-5 py-4 transition-shadow duration-300 ${
-        open ? "shadow-[var(--shadow-lift)]" : ""
-      }`}
-    >
+    <li className="border-t border-line-soft py-4 first:border-t-0">
       <div className="flex items-start gap-4">
         {isColor(raw) ? (
           <span
-            className="mt-1 size-9 shrink-0 rounded-full"
+            className="mt-0.5 size-[38px] shrink-0 rounded-[9px] shadow-[inset_0_0_0_1px_rgba(30,32,70,0.08)]"
             style={{ backgroundColor: raw }}
             aria-hidden
           />
         ) : null}
-        <button onClick={onToggle} className="min-w-0 flex-1 text-left">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h3>{rule.label}</h3>
+        <button
+          onClick={onToggle}
+          aria-expanded={open}
+          className="min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm leading-5">{rule.label}</h3>
             <StateBadge state={rule.status === "confirmed" ? "confirmed" : rule.review_state} />
-            <span className="eyebrow text-[10px]">{rule.severity}</span>
+            <span className="text-xs font-semibold text-ink-muted lowercase">{rule.severity}</span>
           </div>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{rule.statement}</p>
-          {raw ? <p className="mt-2 font-mono text-xs text-muted-foreground">{raw}</p> : null}
+          <p className="mt-1 text-sm text-ink">{rule.statement}</p>
+          {raw ? <p className="mt-1.5 font-mono text-xs text-ink-muted">{raw}</p> : null}
         </button>
       </div>
 
       {rule.conflict_note ? (
-        <p className="mt-3 rounded-[calc(var(--radius)-4px)] bg-[var(--missing)]/[0.07] px-3 py-2 text-xs text-[var(--missing)]">
+        <p className="mt-3 rounded-md bg-[var(--missing)]/[0.07] px-3 py-2 text-xs text-[var(--missing)]">
           {rule.conflict_note}
         </p>
       ) : null}
 
-
-
       {open ? (
-        <div className="reveal-enter mt-6 border-t border-border/60 pt-6 text-sm">
-          <dl className="grid gap-5 sm:grid-cols-2">
+        <div className="reveal-enter mt-4 rounded-md bg-page px-4 py-4 text-sm">
+          <dl className="grid gap-4 sm:grid-cols-2">
             <Detail label="Source" value={rule.source_citation ?? "—"} />
             <Detail label="Applies to" value={`${rule.scope} · ${rule.time_scope}`} />
             <Detail label="Authority" value={rule.authority ?? "Not stated"} />
             <Detail label="Confidence" value={rule.confidence ?? "—"} />
           </dl>
           {rule.source_evidence ? (
-            <p
-              className="mt-6 border-l-2 pl-4 text-sm italic leading-relaxed text-muted-foreground"
-              style={{ borderColor: "var(--brand-accent)" }}
-            >
+            <p className="mt-4 rounded-md bg-card px-4 py-3 text-sm text-ink italic">
               “{rule.source_evidence}”
             </p>
           ) : null}
           {(rule.rule_examples ?? []).length > 0 ? (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {(rule.rule_examples ?? []).map((ex) => (
                 <div
                   key={ex.id}
-                  className={`rounded-[calc(var(--radius)-4px)] px-3.5 py-3 text-xs ${
-                    ex.example_type === "do"
-                      ? "bg-[var(--confirmed)]/[0.07]"
-                      : "bg-[var(--missing)]/[0.07]"
+                  className={`rounded-md px-3.5 py-3 text-xs ${
+                    ex.example_type === "do" ? "bg-green-tint" : "bg-[var(--missing)]/[0.07]"
                   }`}
                 >
-                  <p className="eyebrow text-[10px]">
+                  <p
+                    className={`text-[13px] font-semibold ${
+                      ex.example_type === "do" ? "text-green" : "text-[var(--missing)]"
+                    }`}
+                  >
                     {ex.example_type === "do" ? "Do" : "Don't"}
                   </p>
-                  <p className="mt-1.5 leading-relaxed text-muted-foreground">{ex.description}</p>
+                  <p className="mt-1 text-ink">{ex.description}</p>
                 </div>
               ))}
             </div>
-
           ) : null}
 
           {editing ? (
@@ -532,7 +559,7 @@ function RuleCard({
           )}
         </div>
       ) : null}
-    </div>
+    </li>
   );
 }
 
