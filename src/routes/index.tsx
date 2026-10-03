@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LayoutGrid, Upload } from "lucide-react";
 
 import { AppShell, Empty, PageHead, SectionHead } from "@/components/app-shell";
 import { Meter, ScoreRing } from "@/components/visuals";
@@ -334,11 +334,7 @@ function SubBrandSection({ master, subBrands }: { master: Brand; subBrands: Bran
 
 function BrandCard({ brand }: { brand: Brand }) {
   return (
-    <Link
-      to="/brands/$brandId/brain"
-      params={{ brandId: brand.id }}
-      className="rise-enter surface surface-hover flex flex-col gap-2 px-6 py-[22px]"
-    >
+    <div className="rise-enter surface flex flex-col gap-2 px-6 py-[22px]">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-xl leading-7">{brand.name}</h2>
         <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-brand-tint px-2.5 text-xs font-semibold text-brand">
@@ -351,6 +347,20 @@ function BrandCard({ brand }: { brand: Brand }) {
         </p>
       ) : null}
       {brand.description ? <p className="line-clamp-2 text-sm">{brand.description}</p> : null}
-    </Link>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button asChild size="sm" variant="secondary">
+          <Link to="/brands/$brandId" params={{ brandId: brand.id }}>
+            <Upload aria-hidden />
+            Upload documents
+          </Link>
+        </Button>
+        <Button asChild size="sm" variant="quiet">
+          <Link to="/brands/$brandId/brain" params={{ brandId: brand.id }}>
+            <LayoutGrid aria-hidden />
+            {brand.kind === "master" ? "Brand system" : "Guidelines"}
+          </Link>
+        </Button>
+      </div>
+    </div>
   );
 }
