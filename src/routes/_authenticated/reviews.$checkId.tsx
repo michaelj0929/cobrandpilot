@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Meter, ScoreRing } from "@/components/visuals";
 import { BRAND_KIND_LABEL, getCheck, listBrands, signedAssetUrl } from "@/lib/cobrand-client";
 
-export const Route = createFileRoute("/reviews/$checkId")({
+export const Route = createFileRoute("/_authenticated/_authenticated/reviews/$checkId")({
   head: () => ({
     meta: [
       { title: "Creative review — CoBrand" },
@@ -38,7 +38,7 @@ const DIMENSIONS: Record<string, string> = {
 };
 
 function ReviewResult() {
-  const { checkId } = useParams({ from: "/reviews/$checkId" });
+  const { checkId } = useParams({ from: "/_authenticated/reviews/$checkId" });
   const [assetUrl, setAssetUrl] = useState<string | null>(null);
   const [activePin, setActivePin] = useState<number | null>(null);
 

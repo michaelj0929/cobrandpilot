@@ -22,7 +22,7 @@ import {
 import { readBrief } from "@/lib/cobrand.functions";
 import { checkReadiness, runReview } from "@/lib/review.functions";
 
-export const Route = createFileRoute("/brands/$brandId/review")({
+export const Route = createFileRoute("/_authenticated/_authenticated/brands/$brandId/review")({
   // ?with=<sub-brand id> pre-selects a sub-brand / product line's guidelines.
   validateSearch: (search: Record<string, unknown>): { with?: string } =>
     typeof search["with"] === "string" ? { with: search["with"] } : {},
@@ -63,7 +63,7 @@ const FIELDS = [
 ] as const;
 
 function ReviewIntake() {
-  const { brandId } = useParams({ from: "/brands/$brandId/review" });
+  const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/review" });
   const search = Route.useSearch();
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);

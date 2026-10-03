@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { BRAND_KIND_LABEL, getBrand } from "@/lib/cobrand-client";
 
-export const Route = createFileRoute("/brands/$brandId")({
+export const Route = createFileRoute("/_authenticated/_authenticated/brands/$brandId")({
   head: () => ({
     meta: [
       { title: "Brand model — CoBrand" },
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/brands/$brandId")({
 });
 
 function BrandLayout() {
-  const { brandId } = useParams({ from: "/brands/$brandId" });
+  const { brandId } = useParams({ from: "/_authenticated/brands/$brandId" });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const brand = useQuery({ queryKey: ["brand", brandId], queryFn: () => getBrand(brandId) });
   const parentId = brand.data?.parent_brand_id ?? null;
