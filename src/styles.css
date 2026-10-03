@@ -5,27 +5,62 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Design system: CoBrand (https://claude.ai/artifact/9LQg2AvcrC7bEnCBp6be6Q).
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * :root holds the design-system tokens (raw hex, as published) and maps the
+ * shadcn semantic variables onto them. @theme inline turns both into
+ * Tailwind utilities: bg-brand, text-ink-muted, border-line-soft,
+ * rounded-lg, shadow-sm, font-sans, …
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * To add a color: define it in :root, then register it in @theme inline as
+ * --color-<name>: var(--<name>).
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* Radius: design-system steps (radius-sm/md/lg/full). */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
+
+  /* Shadows. */
+  --shadow-sm: var(--ds-shadow-sm);
+  --shadow-md: var(--ds-shadow-md);
+  --shadow-brand: var(--ds-shadow-brand);
+
+  /* Spacing steps, as named utilities: gap-ds-3, p-ds-4, … */
+  --spacing-ds-1: 6px;
+  --spacing-ds-2: 12px;
+  --spacing-ds-3: 20px;
+  --spacing-ds-4: 24px;
+  --spacing-ds-5: 28px;
+  --spacing-ds-6: 56px;
+
+  /* Design-system colors. */
+  --color-page: var(--page);
+  --color-line-soft: var(--line-soft);
+  --color-line-mid: var(--line-mid);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-highlight: var(--highlight);
+  --color-attention: var(--attention);
+  --color-yellow-tint: var(--yellow-tint);
+  --color-cream: var(--cream);
+  --color-sky-tint: var(--sky-tint);
+  --color-green: var(--green);
+  --color-green-tint: var(--green-tint);
+  --color-orange: var(--orange);
+  --color-peach: var(--peach);
+
+  /* shadcn semantic colors. */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -68,66 +103,90 @@
   --font-sans: var(--font-sans);
 }
 
-
 :root {
-  --radius: 0.75rem;
-  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  /* ---- CoBrand design-system tokens ---- */
+  --page: #f6f6f9;
+  --card: #ffffff;
+  --line-soft: #e7e7ee;
+  --line-mid: #d5d6e0;
+  --ink: #2e2e3b;
+  --ink-muted: #6b6b78;
+  --brand: #4a54ff;
+  --brand-deep: #3a43e0;
+  --brand-tint: #eef0ff;
+  --brand-soft: #c9ccff;
+  --on-brand: #ffffff;
+  --highlight: #feff7b;
+  --attention: #fff6a8;
+  --yellow-tint: #fffbdc;
+  --cream: #ffffdb;
+  --sky-tint: #e8f3ff;
+  --green: #2d7a45;
+  --green-tint: #e9f6ea;
+  --orange: #ff8a4c;
+  --peach: #ffc4a8;
 
-  /* Restrained neutral base: near-white paper, near-black ink. */
-  --background: oklch(0.984 0.002 95);
-  --foreground: oklch(0.17 0.004 75);
-  --card: oklch(0.999 0.001 95);
-  --card-foreground: oklch(0.17 0.004 75);
-  --popover: oklch(0.999 0.001 95);
-  --popover-foreground: oklch(0.17 0.004 75);
-  --primary: oklch(0.19 0.004 75);
-  --primary-foreground: oklch(0.99 0.002 95);
-  --secondary: oklch(0.958 0.003 90);
-  --secondary-foreground: oklch(0.25 0.005 75);
-  --muted: oklch(0.962 0.003 90);
-  --muted-foreground: oklch(0.545 0.006 80);
-  --accent: oklch(0.958 0.003 90);
-  --accent-foreground: oklch(0.25 0.005 75);
+  --ds-shadow-sm: 0 1px 2px rgba(30, 32, 70, 0.04), 0 2px 8px rgba(30, 32, 70, 0.04);
+  --ds-shadow-md: 0 1px 2px rgba(30, 32, 70, 0.05), 0 12px 32px rgba(30, 32, 70, 0.08);
+  --ds-shadow-brand: 0 6px 16px rgba(74, 84, 255, 0.25);
+
+  --radius: 16px;
+  --font-sans: "Wix Madefor Display", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* One family: display text is the same face at a heavier weight. */
+  --font-display: var(--font-sans);
+
+  /* ---- shadcn semantic mapping ---- */
+  --background: var(--page);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: var(--on-brand);
+  --secondary: var(--page);
+  --secondary-foreground: var(--ink);
+  --muted: var(--page);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--brand-tint);
+  --accent-foreground: var(--brand);
+  /* Not in the design system: kept from the previous theme for errors. */
   --destructive: oklch(0.55 0.2 27);
-  --destructive-foreground: oklch(0.99 0.002 95);
+  --destructive-foreground: var(--on-brand);
 
-  /* Hairlines, not heavy outlines. */
-  --border: oklch(0.915 0.003 90);
-  --input: oklch(0.905 0.003 90);
-  --ring: oklch(0.6 0.17 38);
+  --border: var(--line-soft);
+  --input: var(--line-mid);
+  --ring: var(--brand);
 
-  /* One confident accent. */
-  --signal: oklch(0.6 0.19 36);
-  --signal-foreground: oklch(0.99 0.004 95);
+  --signal: var(--brand);
+  --signal-foreground: var(--on-brand);
 
-  --confirmed: oklch(0.5 0.09 155);
+  /* Rule review states. Inferred/missing keep their previous hues (no DS token). */
+  --confirmed: var(--green);
   --inferred: oklch(0.62 0.12 78);
   --missing: oklch(0.55 0.18 25);
-  --chart-1: oklch(0.6 0.19 36);
-  --chart-2: oklch(0.5 0.09 155);
-  --chart-3: oklch(0.45 0.02 80);
-  --chart-4: oklch(0.7 0.13 80);
-  --chart-5: oklch(0.35 0.01 80);
-  --sidebar: oklch(0.97 0.002 90);
-  --sidebar-foreground: oklch(0.17 0.004 75);
-  --sidebar-primary: oklch(0.19 0.004 75);
-  --sidebar-primary-foreground: oklch(0.99 0.002 95);
-  --sidebar-accent: oklch(0.958 0.003 90);
-  --sidebar-accent-foreground: oklch(0.25 0.005 75);
-  --sidebar-border: oklch(0.915 0.003 90);
-  --sidebar-ring: oklch(0.6 0.17 38);
 
-  /* Depth: soft and low-contrast, never boxy. */
-  --shadow-soft: 0 1px 2px oklch(0.2 0.01 80 / 0.04), 0 14px 34px -24px oklch(0.2 0.01 80 / 0.28);
-  --shadow-lift: 0 1px 2px oklch(0.2 0.01 80 / 0.05), 0 22px 48px -28px oklch(0.2 0.01 80 / 0.34);
+  --chart-1: var(--brand);
+  --chart-2: var(--green);
+  --chart-3: var(--brand-soft);
+  --chart-4: var(--orange);
+  --chart-5: var(--ink);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--on-brand);
+  --sidebar-accent: var(--brand-tint);
+  --sidebar-accent-foreground: var(--brand);
+  --sidebar-border: var(--line-soft);
+  --sidebar-ring: var(--brand);
 
-  /* Brand-reflective tokens: overridden per brand at runtime. */
-  --brand-accent: var(--signal);
-  --brand-ink: var(--foreground);
-  --brand-display: var(--font-display);
+  --shadow-soft: var(--ds-shadow-sm);
+  --shadow-lift: var(--ds-shadow-md);
+
+  /* CoBrand blue is the UI accent on every brand. */
+  --brand-accent: var(--brand);
+  --brand-ink: var(--ink);
+  --brand-display: var(--font-sans);
 }
-
 
 .dark {
   --background: oklch(0.16 0.004 75);
@@ -166,6 +225,7 @@
   --shadow-lift: 0 1px 2px oklch(0 0 0 / 0.35), 0 22px 48px -28px oklch(0 0 0 / 0.7);
 }
 
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -175,9 +235,8 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.7;
-    letter-spacing: 0.005em;
+    font-size: 14px;
+    line-height: 22px;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -190,73 +249,90 @@
   h2,
   h3,
   .display {
-    font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    line-height: 1.04;
+    font-family: var(--font-sans);
+    font-weight: 600;
     text-wrap: balance;
   }
 
+  /* title */
   h1 {
-    font-size: clamp(2.75rem, 5vw, 4rem);
+    font-size: 30px;
+    line-height: 38px;
+    letter-spacing: -0.2px;
   }
 
+  /* heading */
   h2 {
-    font-size: clamp(1.75rem, 2.6vw, 2.25rem);
+    font-size: 16px;
+    line-height: 22px;
   }
 
+  /* label */
   h3 {
-    font-size: 1.125rem;
-    font-family: var(--font-sans);
-    font-weight: 500;
-    letter-spacing: -0.005em;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: 0.2px;
   }
 
+  .display {
+    font-size: 48px;
+    line-height: 56px;
+    letter-spacing: -0.6px;
+  }
+
+  /* Small section label (design-system "label" style). */
   .eyebrow {
-    font-size: 0.6875rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    line-height: 1.4;
-    color: var(--color-muted-foreground);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: var(--color-ink-muted);
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--brand-accent) 22%, transparent);
+    background: var(--brand-soft);
   }
 }
 
-/* Surfaces: hairline + soft depth instead of boxy outlined cards. */
+/* Cards: white, 1px line-soft border, radius-lg, shadow-sm. */
 @utility surface {
   background-color: var(--color-card);
-  border: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
+/* Tinted / quiet card: no border or shadow. */
 @utility surface-quiet {
-  background-color: color-mix(in oklab, var(--color-card) 60%, transparent);
-  border: 1px solid color-mix(in oklab, var(--color-border) 55%, transparent);
-  border-radius: var(--radius);
+  background-color: var(--color-card);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
 }
 
 @utility surface-hover {
   transition:
-    box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 260ms ease;
+    box-shadow 200ms ease,
+    border-color 200ms ease;
   &:hover {
-    box-shadow: var(--shadow-lift);
-    transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--brand-accent) 30%, var(--color-border));
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-brand-soft);
   }
 }
 
+/* Page intro (design-system "intro" style). */
 @utility lede {
-  font-size: 1.0625rem;
-  line-height: 1.75;
-  color: var(--color-muted-foreground);
-  max-width: 62ch;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--color-ink-muted);
+  max-width: 600px;
+}
+
+/* Numbers on stat cards. */
+@utility stat {
+  font-size: 44px;
+  line-height: 56px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
 }
 
 /* Motion: drilling into detail should feel like zooming, not jumping. */
