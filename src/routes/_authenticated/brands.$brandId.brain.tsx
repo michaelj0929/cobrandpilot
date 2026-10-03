@@ -32,7 +32,7 @@ import {
 } from "@/lib/cobrand-client";
 import { applyEdits, confirmRule, draftEdits, saveRule } from "@/lib/cobrand.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/brands/$brandId/brain")({
+export const Route = createFileRoute("/_authenticated/brands/$brandId/brain")({
   head: () => ({
     meta: [
       { title: "Brand Brain — CoBrand" },

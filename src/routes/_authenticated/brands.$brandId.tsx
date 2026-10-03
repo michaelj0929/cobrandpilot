@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { BRAND_KIND_LABEL, getBrand } from "@/lib/cobrand-client";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/brands/$brandId")({
+export const Route = createFileRoute("/_authenticated/brands/$brandId")({
   head: () => ({
     meta: [
       { title: "Brand model — CoBrand" },

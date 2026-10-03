@@ -34,7 +34,7 @@ import {
 } from "@/lib/cobrand-client";
 import { ingestSource, proposeForGap, runGapCheck, addManualRule } from "@/lib/cobrand.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/brands/$brandId/")({
+export const Route = createFileRoute("/_authenticated/brands/$brandId/")({
   component: SourcesAndGaps,
 });
 

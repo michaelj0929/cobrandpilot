@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Meter, ScoreRing } from "@/components/visuals";
 import { BRAND_KIND_LABEL, getCheck, listBrands, signedAssetUrl } from "@/lib/cobrand-client";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/reviews/$checkId")({
+export const Route = createFileRoute("/_authenticated/reviews/$checkId")({
   head: () => ({
     meta: [
       { title: "Creative review — CoBrand" },

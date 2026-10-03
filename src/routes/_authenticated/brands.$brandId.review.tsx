@@ -22,7 +22,7 @@ import {
 import { readBrief } from "@/lib/cobrand.functions";
 import { checkReadiness, runReview } from "@/lib/review.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/brands/$brandId/review")({
+export const Route = createFileRoute("/_authenticated/brands/$brandId/review")({
   // ?with=<sub-brand id> pre-selects a sub-brand / product line's guidelines.
   validateSearch: (search: Record<string, unknown>): { with?: string } =>
     typeof search["with"] === "string" ? { with: search["with"] } : {},
