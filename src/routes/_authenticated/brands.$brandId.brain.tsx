@@ -32,7 +32,7 @@ import {
 } from "@/lib/cobrand-client";
 import { applyEdits, confirmRule, draftEdits, saveRule } from "@/lib/cobrand.functions";
 
-export const Route = createFileRoute("/brands/$brandId/brain")({
+export const Route = createFileRoute("/_authenticated/brands/$brandId/brain")({
   head: () => ({
     meta: [
       { title: "Brand Brain — CoBrand" },
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/brands/$brandId/brain")({
 const LAYERS = ["foundation", "identity", "execution"] as const;
 
 function BrandBrain() {
-  const { brandId } = useParams({ from: "/brands/$brandId/brain" });
+  const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/brain" });
   const queryClient = useQueryClient();
 
   const [layer, setLayer] = useState<(typeof LAYERS)[number]>("foundation");

@@ -65,6 +65,7 @@ export type Database = {
           parent_brand_id: string | null
           primary_market: string | null
           updated_at: string
+          workspace_id: string | null
         }
         Insert: {
           brand_type?: string | null
@@ -78,6 +79,7 @@ export type Database = {
           parent_brand_id?: string | null
           primary_market?: string | null
           updated_at?: string
+          workspace_id?: string | null
         }
         Update: {
           brand_type?: string | null
@@ -91,6 +93,7 @@ export type Database = {
           parent_brand_id?: string | null
           primary_market?: string | null
           updated_at?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -98,6 +101,13 @@ export type Database = {
             columns: ["parent_brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brands_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -573,12 +583,35 @@ export type Database = {
           },
         ]
       }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_brand: { Args: { _brand_id: string }; Returns: boolean }
+      can_access_check: { Args: { _check_id: string }; Returns: boolean }
+      owns_workspace: { Args: { _workspace_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

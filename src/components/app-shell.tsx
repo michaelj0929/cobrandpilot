@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { UserAvatar } from "@/components/user-avatar";
+import { displayName, useAuthUser } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 /** The brand the current page belongs to; scopes the brand nav items. */
@@ -20,6 +22,8 @@ export type ShellBrand = {
   /** Set for a sub-brand / product line: its master brand. */
   master?: { id: string; name: string } | null;
   kindLabel?: string | null;
+  /** Workspace the brand lives in; "Home" goes back to its dashboard. */
+  workspaceId?: string | null;
 };
 
 export function AppShell({ brand, children }: { brand?: ShellBrand; children: ReactNode }) {
@@ -38,12 +42,14 @@ const navItem =
 
 function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const user = useAuthUser();
   const brandBase = brand ? `/brands/${brand.id}` : null;
   // Checks always run on the master brand; a sub-brand is pre-selected.
   const masterId = brand ? (brand.master?.id ?? brand.id) : null;
 
   const isOn = {
-    home: pathname === "/",
+    home: pathname.startsWith("/workspaces"),
+    settings: pathname.startsWith("/settings"),
     uploads: brandBase !== null && pathname === brandBase,
     system: brandBase !== null && pathname.startsWith(`${brandBase}/brain`),
     checks:
@@ -57,7 +63,7 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
       className="flex flex-row flex-wrap gap-0.5 border-b border-line-soft bg-card p-4 md:sticky md:top-0 md:h-screen md:w-[236px] md:shrink-0 md:flex-col md:flex-nowrap md:border-r md:border-b-0 md:px-4 md:pt-8 md:pb-6"
     >
       <Link
-        to="/"
+        to="/workspaces"
         aria-label="CoBrand home"
         className="inline-flex w-full flex-col self-start px-3 pb-3 text-[26px] leading-[0.8] font-extrabold tracking-[-0.6px] text-ink md:w-auto md:pb-8"
       >
@@ -83,10 +89,24 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
         </div>
       ) : null}
 
-      <Link to="/" className={cn(navItem, "hover:bg-page hover:text-ink", isOn.home && on)}>
-        <NavIcon icon={House} />
-        <span>Home</span>
-      </Link>
+      {brand?.workspaceId ? (
+        <Link
+          to="/workspaces/$workspaceId"
+          params={{ workspaceId: brand.workspaceId }}
+          className={cn(navItem, "hover:bg-page hover:text-ink", isOn.home && on)}
+        >
+          <NavIcon icon={House} />
+          <span>Home</span>
+        </Link>
+      ) : (
+        <Link
+          to="/workspaces"
+          className={cn(navItem, "hover:bg-page hover:text-ink", isOn.home && on)}
+        >
+          <NavIcon icon={House} />
+          <span>Home</span>
+        </Link>
+      )}
       <BrandNavLink
         brandId={brand?.id}
         to="/brands/$brandId"
@@ -124,19 +144,28 @@ function SideNav({ brand }: { brand?: ShellBrand | undefined }) {
 
       <div className="hidden min-h-6 flex-1 md:block" />
 
-      <SoonItem icon={Settings} label="Settings" />
-      <div className="mt-2.5 hidden items-center gap-2.5 border-t border-line-soft px-3 pt-4 md:flex">
-        <span
-          aria-hidden
-          className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-peach to-orange text-xs font-bold text-ink"
-        >
-          ?
+      <Link
+        to="/settings"
+        className={cn(navItem, "hover:bg-page hover:text-ink", isOn.settings && on)}
+      >
+        <NavIcon icon={Settings} />
+        <span>Settings</span>
+      </Link>
+      <Link
+        to="/settings"
+        aria-label="Your account"
+        className="mt-2.5 flex items-center gap-2.5 rounded-md border-line-soft px-3 pt-4 transition-colors hover:text-brand md:border-t"
+      >
+        <UserAvatar user={user} />
+        <span className="hidden min-w-0 md:block">
+          <b className="block truncate text-[13px] leading-[17px] font-semibold text-ink">
+            {user ? displayName(user) : "…"}
+          </b>
+          <small className="block truncate text-xs leading-4 text-ink-muted">
+            {user?.email ?? ""}
+          </small>
         </span>
-        <span className="min-w-0">
-          <b className="block text-[13px] leading-[17px] font-semibold text-ink">Pilot workspace</b>
-          <small className="block text-xs leading-4 text-ink-muted">Sign-in coming soon</small>
-        </span>
-      </div>
+      </Link>
     </nav>
   );
 }

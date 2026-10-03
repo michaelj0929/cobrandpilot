@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAccess } from "./access.server";
+
 import {
   analyzeGaps,
   classifyDocument,
@@ -119,8 +122,10 @@ async function readSource(sourceFileId: string) {
 /* ----------------------------------------------------------- Ingest a source */
 
 export const ingestSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ sourceFileId: z.string() }).parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "source_files", data.sourceFileId);
     const supabase = await db();
     const { source, prepared } = await readSource(data.sourceFileId);
 
@@ -284,8 +289,10 @@ export const ingestSource = createServerFn({ method: "POST" })
 /* -------------------------------------------------------------- Gap check */
 
 export const runGapCheck = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ brandId: z.string() }).parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "brands", data.brandId);
     const supabase = await db();
     const { data: brand } = await supabase
       .from("brands")
@@ -324,8 +331,10 @@ export const runGapCheck = createServerFn({ method: "POST" })
 /* --------------------------------------------------- Let CoBrand propose */
 
 export const proposeForGap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ gapId: z.string() }).parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "setup_gaps", data.gapId);
     const supabase = await db();
     const { data: gap } = await supabase
       .from("setup_gaps")
@@ -372,10 +381,12 @@ export const proposeForGap = createServerFn({ method: "POST" })
 /* --------------------------------------------------- Conversational edits */
 
 export const draftEdits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z.object({ brandId: z.string(), request: z.string().min(2) }).parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "brands", data.brandId);
     const rules = await loadRuleLines(data.brandId);
     return proposeEdits({ request: data.request, rules });
   });
@@ -393,6 +404,7 @@ const changeSchema = z.object({
 });
 
 export const applyEdits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -402,7 +414,8 @@ export const applyEdits = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "brands", data.brandId);
     const supabase = await db();
 
     for (const change of data.changes) {
@@ -452,6 +465,7 @@ export const applyEdits = createServerFn({ method: "POST" })
 /* ------------------------------------------------------- Structured edits */
 
 export const saveRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -465,7 +479,8 @@ export const saveRule = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "brands", data.brandId);
     const supabase = await db();
     await supabase
       .from("rules")
@@ -487,10 +502,12 @@ export const saveRule = createServerFn({ method: "POST" })
   });
 
 export const confirmRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z.object({ ruleId: z.string(), brandId: z.string(), label: z.string() }).parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "brands", data.brandId);
     const supabase = await db();
     await supabase
       .from("rules")
@@ -501,6 +518,7 @@ export const confirmRule = createServerFn({ method: "POST" })
   });
 
 export const addManualRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -515,7 +533,8 @@ export const addManualRule = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "brands", data.brandId);
     const supabase = await db();
     await supabase.from("rules").insert({
       brand_id: data.brandId,
@@ -540,5 +559,6 @@ export const addManualRule = createServerFn({ method: "POST" })
 /* --------------------------------------------- Creative brief pre-fill */
 
 export const readBrief = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ brief: z.string().min(10) }).parse(input))
   .handler(async ({ data }) => prefillContext({ brief: data.brief }));

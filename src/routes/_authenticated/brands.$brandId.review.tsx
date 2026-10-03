@@ -15,14 +15,14 @@ import type { TablesInsert } from "@/integrations/supabase/types";
 import {
   BRAND_KIND_LABEL,
   MAX_FILE_BYTES,
-  getBrandFamily,
+  getBrandFamilyOf,
   listChecks,
   uploadToBucket,
 } from "@/lib/cobrand-client";
 import { readBrief } from "@/lib/cobrand.functions";
 import { checkReadiness, runReview } from "@/lib/review.functions";
 
-export const Route = createFileRoute("/brands/$brandId/review")({
+export const Route = createFileRoute("/_authenticated/brands/$brandId/review")({
   // ?with=<sub-brand id> pre-selects a sub-brand / product line's guidelines.
   validateSearch: (search: Record<string, unknown>): { with?: string } =>
     typeof search["with"] === "string" ? { with: search["with"] } : {},
@@ -63,7 +63,7 @@ const FIELDS = [
 ] as const;
 
 function ReviewIntake() {
-  const { brandId } = useParams({ from: "/brands/$brandId/review" });
+  const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/review" });
   const search = Route.useSearch();
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -88,7 +88,7 @@ function ReviewIntake() {
   });
 
   // Checks run on the master brand plus any selected sub-brands / product lines.
-  const family = useQuery({ queryKey: ["brand-family"], queryFn: getBrandFamily });
+  const family = useQuery({ queryKey: ["brand-family", "of", brandId], queryFn: () => getBrandFamilyOf(brandId) });
   const subBrands = family.data?.subBrands ?? [];
   const [selectedSubs, setSelectedSubs] = useState<string[]>(search.with ? [search.with] : []);
 

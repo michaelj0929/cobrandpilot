@@ -34,7 +34,7 @@ import {
 } from "@/lib/cobrand-client";
 import { ingestSource, proposeForGap, runGapCheck, addManualRule } from "@/lib/cobrand.functions";
 
-export const Route = createFileRoute("/brands/$brandId/")({
+export const Route = createFileRoute("/_authenticated/brands/$brandId/")({
   component: SourcesAndGaps,
 });
 
@@ -50,7 +50,7 @@ const CLASSIFICATIONS = [
 ];
 
 function SourcesAndGaps() {
-  const { brandId } = useParams({ from: "/brands/$brandId/" });
+  const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/" });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
