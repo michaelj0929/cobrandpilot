@@ -1,14 +1,20 @@
 # CoBrand — Pilot Stage 1 build plan
 
-A working prototype of the full PRD: upload brand material, get a structured Brand Model you can review and edit, see what's missing, then check any brief, copy, or asset against the brand and get scored, specific feedback. No login — one workspace, one brand model per brand, everything saved.
+A working prototype of the full PRD: upload brand material, get a structured Brand Model you can review and edit, see what's missing, then check any brief, copy, or asset against the brand and get scored, specific feedback. No login — one workspace with one master brand (plus optional sub-brands and product lines), one brand model per brand, everything saved.
 
 ## What gets built
 
 ### 1. Brands & upload
-- Brands list; create a brand (name, category, type, market, description).
+- One master brand per workspace; create it on first run (name, category, type, market, description), then add sub-brands and product lines under it (see 1a).
 - Drag-and-drop upload of PDF, PPTX, DOCX, PNG/JPG/WEBP, SVG, plus pasted text. Several files per pass, capped at 25MB each / 10 per pass.
 - Each file gets an auto-suggested classification (master guideline, messaging, campaign, approved creative, design system, product messaging, channel, other) that the user can override.
 - Files stored in cloud storage; every extracted rule keeps a citation back to file + page/section.
+
+### 1a. Master brand, sub-brands and product lines (added 2026-10-02)
+- **One master brand per workspace.** First run asks for the master brand, then prompts the user to upload all their brand documents. Uploads are stored as queued; a "Build brand system" step then reads every pending document in turn and runs one gap check. The master brand system is the knowledge base every check runs against. When accounts are added, the rule becomes one master brand per account.
+- **Sub-brands and product lines** sit directly under the master (no deeper nesting). Each has its own uploads, rules, Brand Brain and versions. Their material is conflict-checked against the master's confirmed rules as well as their own, and they skip the essential-checklist gap check because the master covers it.
+- **Checking content** always runs on the master brand. The user picks any number of sub-brands / product lines whose guidelines also apply. The context resolver and reviewer receive master rules plus the selected sets, each line tagged with its origin. Sub-brand and product-line rules sit at the Product level of the priority order: they override master Should/Can rules where they conflict, and a master Must always wins. Each check records which sets it used.
+- **Data:** `brands.parent_brand_id` and `brands.kind` (master / sub_brand / product_line), a unique index allowing one master brand, a trigger keeping sub-brands directly under the master, and `validation_checks.sub_brand_ids`.
 
 ### 2. Extraction into the Brand Model
 Separate AI steps, each saved and inspectable:
@@ -57,7 +63,7 @@ Brand at a glance (key tokens, voice summary), unresolved gaps up front, recent 
 - Server functions under TanStack Start; uploads and long AI work never block the page.
 
 ## Out of scope (per the PRD)
-No Figma/Adobe/Canva plugins, no DAM or CMS sync, no auto-applied fixes, no generated annotated images, no multi-brand roles, no auto-evolving guidelines, no video validation.
+No Figma/Adobe/Canva plugins, no DAM or CMS sync, no auto-applied fixes, no generated annotated images, no multi-brand roles (sub-brands share the workspace; there are no per-brand permissions), no auto-evolving guidelines, no video validation.
 
 ## Suggested order
 1. Brands, upload, storage, schema.
