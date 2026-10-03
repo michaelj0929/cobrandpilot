@@ -225,7 +225,6 @@
   --shadow-lift: 0 1px 2px oklch(0 0 0 / 0.35), 0 22px 48px -28px oklch(0 0 0 / 0.7);
 }
 
-
 @layer base {
   * {
     border-color: var(--color-border);
@@ -389,5 +388,3 @@
     transition-duration: 0.01ms !important;
   }
 }
-
-

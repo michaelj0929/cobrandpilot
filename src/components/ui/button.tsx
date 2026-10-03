@@ -5,23 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-md border-[1.5px] border-transparent text-sm leading-[18px] font-semibold tracking-[0.2px] cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        // Solid: the one main action per screen.
+        default: "bg-brand text-on-brand shadow-brand hover:bg-brand-deep",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        // Outline: every other action.
+        outline: "border-brand bg-card text-brand hover:bg-brand-tint",
+        secondary: "border-brand bg-card text-brand hover:bg-brand-tint",
+        // Quiet white: low-emphasis actions next to content.
+        quiet: "border-line-soft bg-card text-ink hover:bg-page",
+        ghost: "text-ink hover:bg-page",
+        link: "border-0 px-0 text-brand hover:text-brand-deep hover:underline underline-offset-[3px]",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
+        default: "min-h-11 px-5",
+        sm: "min-h-9 px-3.5 text-[13px]",
+        lg: "min-h-11 px-7",
+        icon: "size-11",
       },
     },
     defaultVariants: {
