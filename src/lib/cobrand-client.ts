@@ -293,3 +293,10 @@ export async function renameWorkspace(id: string, name: string) {
   const { error } = await supabase.from("workspaces").update({ name: name.trim() }).eq("id", id);
   if (error) throw error;
 }
+
+/** The family (master + sub-brands) of the workspace a brand belongs to. */
+export async function getBrandFamilyOf(brandId: string) {
+  const brand = await getBrand(brandId);
+  if (!brand?.workspace_id) return { master: null, subBrands: [] as Brand[] };
+  return getBrandFamily(brand.workspace_id);
+}

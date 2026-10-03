@@ -15,7 +15,7 @@ import type { TablesInsert } from "@/integrations/supabase/types";
 import {
   BRAND_KIND_LABEL,
   MAX_FILE_BYTES,
-  getBrandFamily,
+  getBrandFamilyOf,
   listChecks,
   uploadToBucket,
 } from "@/lib/cobrand-client";
@@ -88,7 +88,7 @@ function ReviewIntake() {
   });
 
   // Checks run on the master brand plus any selected sub-brands / product lines.
-  const family = useQuery({ queryKey: ["brand-family"], queryFn: getBrandFamily });
+  const family = useQuery({ queryKey: ["brand-family", "of", brandId], queryFn: () => getBrandFamilyOf(brandId) });
   const subBrands = family.data?.subBrands ?? [];
   const [selectedSubs, setSelectedSubs] = useState<string[]>(search.with ? [search.with] : []);
 

@@ -23,7 +23,7 @@ import {
   MAX_FILE_BYTES,
   createBrand,
   createSourceFromFile,
-  getBrandFamily,
+  getBrandFamilyOf,
   type Brand,
   type BrandKind,
 } from "@/lib/cobrand-client";
@@ -39,7 +39,7 @@ export function SubBrandsPanel({ master }: { master: Brand }) {
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const family = useQuery({ queryKey: ["brand-family"], queryFn: getBrandFamily });
+  const family = useQuery({ queryKey: ["brand-family", "of", master.id], queryFn: () => getBrandFamilyOf(master.id) });
   const subBrands = family.data?.subBrands ?? [];
 
   const [open, setOpen] = useState(false);
