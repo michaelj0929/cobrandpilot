@@ -60,7 +60,9 @@ export type Database = {
           current_version: number
           description: string | null
           id: string
+          kind: string
           name: string
+          parent_brand_id: string | null
           primary_market: string | null
           updated_at: string
         }
@@ -71,7 +73,9 @@ export type Database = {
           current_version?: number
           description?: string | null
           id?: string
+          kind?: string
           name: string
+          parent_brand_id?: string | null
           primary_market?: string | null
           updated_at?: string
         }
@@ -82,11 +86,21 @@ export type Database = {
           current_version?: number
           description?: string | null
           id?: string
+          kind?: string
           name?: string
+          parent_brand_id?: string | null
           primary_market?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "brands_parent_brand_id_fkey"
+            columns: ["parent_brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       context_tags: {
         Row: {
@@ -499,6 +513,7 @@ export type Database = {
           readiness: Json | null
           score: number | null
           status: string
+          sub_brand_ids: string[]
           summary: string | null
           updated_at: string
         }
@@ -521,6 +536,7 @@ export type Database = {
           readiness?: Json | null
           score?: number | null
           status?: string
+          sub_brand_ids?: string[]
           summary?: string | null
           updated_at?: string
         }
@@ -543,6 +559,7 @@ export type Database = {
           readiness?: Json | null
           score?: number | null
           status?: string
+          sub_brand_ids?: string[]
           summary?: string | null
           updated_at?: string
         }
