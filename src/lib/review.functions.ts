@@ -128,8 +128,8 @@ function creativeSummary(check: {
 export const checkReadiness = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ checkId: z.string() }).parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAccess(context.supabase, "validation_checks", data.checkId);
+  .handler(async ({ data, context: auth }) => {
+    await assertAccess(auth.supabase, "validation_checks", data.checkId);
     const { supabase, check, brand, subBrands, rules } = await loadCheck(data.checkId);
     const context = describeContext((check.creative_context ?? {}) as Record<string, unknown>);
 
@@ -162,8 +162,8 @@ export const checkReadiness = createServerFn({ method: "POST" })
 export const runReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ checkId: z.string() }).parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAccess(context.supabase, "validation_checks", data.checkId);
+  .handler(async ({ data, context: auth }) => {
+    await assertAccess(auth.supabase, "validation_checks", data.checkId);
     const { supabase, check, brand, subBrands, rules } = await loadCheck(data.checkId);
     const brandName = guidelineSetName(brand, subBrands);
     const context = describeContext((check.creative_context ?? {}) as Record<string, unknown>);

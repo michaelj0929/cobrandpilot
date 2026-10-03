@@ -54,7 +54,7 @@ function WorkspacesPage() {
   return (
     <AppShell>
       <PageHead
-        eyebrow={user ? `Hi, ${displayName(user).split(" ")[0]}` : undefined}
+        {...(user ? { eyebrow: `Hi, ${displayName(user).split(" ")[0]}` } : {})}
         title="Your workspaces"
         description="Each workspace holds one master brand, plus its sub-brands and product lines."
         actions={

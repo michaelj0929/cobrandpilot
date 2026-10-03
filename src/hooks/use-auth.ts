@@ -18,10 +18,10 @@ export function useAuthUser() {
 
 export function displayName(user: User | null | undefined) {
   const meta = (user?.user_metadata ?? {}) as Record<string, string | undefined>;
-  return meta.full_name ?? meta.name ?? user?.email ?? "You";
+  return meta['full_name'] ?? meta['name'] ?? user?.email ?? "You";
 }
 
 export function avatarUrl(user: User | null | undefined) {
   const meta = (user?.user_metadata ?? {}) as Record<string, string | undefined>;
-  return meta.avatar_url ?? meta.picture ?? null;
+  return meta['avatar_url'] ?? meta['picture'] ?? null;
 }
