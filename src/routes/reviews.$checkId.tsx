@@ -2,9 +2,12 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { AppShell, StateBadge } from "@/components/app-shell";
-import { Meter, ScoreRing } from "@/components/visuals";
+import { Info } from "lucide-react";
 
+import { AppShell, StateBadge } from "@/components/app-shell";
+import { BusyLine } from "@/components/loading";
+import { Button } from "@/components/ui/button";
+import { Meter, ScoreRing } from "@/components/visuals";
 import { getCheck, signedAssetUrl } from "@/lib/cobrand-client";
 
 export const Route = createFileRoute("/reviews/$checkId")({
@@ -60,7 +63,7 @@ function ReviewResult() {
   if (check.isLoading) {
     return (
       <AppShell>
-        <p className="text-sm text-muted-foreground">Loading review…</p>
+        <BusyLine text="Loading review…" />
       </AppShell>
     );
   }
@@ -68,7 +71,7 @@ function ReviewResult() {
   if (!check.data) {
     return (
       <AppShell>
-        <p>That review could not be found.</p>
+        <h1>That review could not be found.</h1>
       </AppShell>
     );
   }
@@ -81,48 +84,56 @@ function ReviewResult() {
         version: check.data.brands?.current_version ?? null,
       }}
     >
-      <div className="rise-enter mb-12 flex flex-wrap items-end justify-between gap-10">
-        <div className="max-w-2xl">
-          <p className="eyebrow mb-3">
+      <div className="rise-enter mb-7 flex flex-wrap items-end justify-between gap-6">
+        <div className="flex max-w-[600px] flex-col gap-2.5">
+          <p className="eyebrow">
             {check.data.brands?.name} · brand model v{check.data.brand_model_version}
           </p>
           <h1>{check.data.asset_name ?? "Creative review"}</h1>
-          {check.data.summary ? <p className="lede mt-5">{check.data.summary}</p> : null}
+          {check.data.summary ? <p className="lede">{check.data.summary}</p> : null}
         </div>
-        <div className="flex items-center gap-5">
-          <ScoreRing value={check.data.score ?? 0} size={104} />
-          <p className="eyebrow max-w-[7rem]">{check.data.label ?? check.data.status}</p>
-        </div>
+        <section className="flex items-center gap-4 rounded-lg bg-brand-tint px-6 py-[18px]">
+          <ScoreRing value={check.data.score ?? 0} size={84} />
+          <div>
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brand score</h2>
+            <p className="max-w-[9rem] text-[13px] leading-5 font-semibold text-brand">
+              {check.data.label ?? check.data.status}
+            </p>
+          </div>
+        </section>
       </div>
 
       {check.data.error ? (
-        <p className="mb-6 rounded-[var(--radius)] bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <p className="mb-5 rounded-md bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {check.data.error}
         </p>
       ) : null}
 
-      <div className="grid gap-10 border-y border-border/60 py-8 sm:grid-cols-5">
+      <section className="surface grid gap-6 px-6 py-[22px] sm:grid-cols-5">
         {Object.entries(DIMENSIONS).map(([key, label]) => (
-          <div key={key}>
-            <p className="eyebrow">{label}</p>
-            <p className="display mt-2 text-3xl leading-none">{scores[key] ?? "—"}</p>
-            <div className="mt-3">
-              <Meter value={scores[key] ?? 0} />
-            </div>
+          <div key={key} className="flex flex-col gap-1">
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px] text-ink-muted">{label}</h2>
+            <p className="text-[30px] leading-[38px] font-semibold tracking-[-0.2px]">
+              {scores[key] ?? "—"}
+            </p>
+            <Meter value={scores[key] ?? 0} />
           </div>
         ))}
-      </div>
+      </section>
 
       {readiness?.cannot_do ? (
-        <p className="mt-6 surface-quiet border-dashed px-4 py-3 text-sm text-muted-foreground">
-          Judged with {Math.round(readiness.score ?? 0)}% brand readiness. {readiness.cannot_do}
+        <p className="mt-5 flex items-start gap-3 rounded-lg bg-sky-tint px-4 py-3 text-sm">
+          <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-brand" />
+          <span>
+            Judged with {Math.round(readiness.score ?? 0)}% brand readiness. {readiness.cannot_do}
+          </span>
         </p>
       ) : null}
 
-      <div className="mt-10 grid gap-16 lg:grid-cols-[1fr_1.1fr]">
+      <div className="mt-7 grid items-start gap-6 lg:grid-cols-[1fr_1.1fr]">
         {assetUrl && isImage ? (
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="relative overflow-hidden surface">
+          <div className="lg:sticky lg:top-8">
+            <div className="surface relative overflow-hidden">
               <img src={assetUrl} alt={check.data.asset_name ?? "Creative"} className="w-full" />
               {issues
                 .filter((f) => f.pin_x !== null && f.pin_y !== null)
@@ -131,10 +142,9 @@ function ReviewResult() {
                     key={f.id}
                     onClick={() => setActivePin(activePin === f.number ? null : f.number)}
                     style={{ left: `${f.pin_x}%`, top: `${f.pin_y}%` }}
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background px-2 py-0.5 text-xs font-semibold shadow ${
-                      activePin === f.number
-                        ? "bg-foreground text-background"
-                        : "bg-[var(--signal)] text-[var(--signal-foreground)]"
+                    aria-label={`Finding ${f.number}`}
+                    className={`absolute flex size-7 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-2 border-card text-xs font-semibold shadow-md ${
+                      activePin === f.number ? "bg-brand text-on-brand" : "bg-attention text-ink"
                     }`}
                   >
                     {f.number}
@@ -142,85 +152,102 @@ function ReviewResult() {
                 ))}
             </div>
             {activePin ? (
-              <p className="mt-3 text-sm text-muted-foreground">
+              <p className="mt-3 text-sm">
                 {issues.find((f) => f.number === activePin)?.explanation}
               </p>
             ) : (
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3 text-xs text-ink-muted">
                 Numbered pins mark the exact spot each finding refers to.
               </p>
             )}
           </div>
         ) : (
-          <div className="surface p-6">
-            <p className="eyebrow">What was reviewed</p>
+          <section className="surface px-6 py-[22px]">
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">What was reviewed</h2>
             {check.data.brief_text ? (
               <>
-                <p className="mt-3 text-sm font-medium">Brief</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                  {check.data.brief_text}
-                </p>
+                <p className="mt-4 text-sm font-semibold">Brief</p>
+                <p className="mt-1 text-sm whitespace-pre-wrap">{check.data.brief_text}</p>
               </>
             ) : null}
             {check.data.copy_text ? (
               <>
-                <p className="mt-4 text-sm font-medium">Copy</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                  {check.data.copy_text}
-                </p>
+                <p className="mt-4 text-sm font-semibold">Copy</p>
+                <p className="mt-1 text-sm whitespace-pre-wrap">{check.data.copy_text}</p>
               </>
             ) : null}
             {check.data.asset_name && !isImage ? (
-              <p className="mt-4 text-sm text-muted-foreground">Asset: {check.data.asset_name}</p>
+              <p className="mt-4 text-sm text-ink-muted">Asset: {check.data.asset_name}</p>
             ) : null}
-          </div>
+          </section>
         )}
 
-        <div className="space-y-4">
-          <h2 className="text-2xl">
+        <div className="flex flex-col gap-4">
+          {passes.length > 0 ? (
+            <section className="rounded-lg bg-green-tint px-5 py-4">
+              <h2 className="text-[13px] leading-[18px] tracking-[0.2px] text-green">
+                What already works
+              </h2>
+              <ul className="mt-2 space-y-2 text-sm">
+                {passes.map((f) => (
+                  <li key={f.id}>
+                    <span className="font-semibold">{f.title}</span> <span>{f.explanation}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          <h2 className="mt-1">
             {issues.length} {issues.length === 1 ? "issue" : "issues"} to fix
           </h2>
           {issues.map((f) => (
-            <article key={f.id} className="surface p-6" onMouseEnter={() => setActivePin(f.number)}>
+            <article
+              key={f.id}
+              className="surface px-6 py-5"
+              onMouseEnter={() => setActivePin(f.number)}
+            >
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--signal)] text-xs font-semibold text-[var(--signal-foreground)]">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-attention text-xs font-semibold text-ink">
                   {f.number}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-medium">{f.title}</h3>
+                    <h3 className="text-sm leading-5">{f.title}</h3>
                     <StateBadge
                       state={f.severity === "must" ? "missing" : "inferred"}
                       label={f.severity}
                     />
-                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      {f.pass_name} · {f.confidence} confidence
-                    </span>
                   </div>
-                  <p className="mt-2 text-sm">{f.explanation}</p>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    {f.pass_name} · {f.confidence} confidence
+                  </p>
+                  <p className="mt-2.5 text-sm">{f.explanation}</p>
                   {f.why_it_matters ? (
-                    <p className="mt-1.5 text-sm text-muted-foreground">{f.why_it_matters}</p>
+                    <p className="mt-1.5 text-sm text-ink-muted">{f.why_it_matters}</p>
                   ) : null}
                   {f.quote ? (
-                    <p className="mt-2 border-l-2 border-border pl-3 text-sm italic">“{f.quote}”</p>
+                    <p className="mt-3 rounded-md bg-page px-3.5 py-2.5 text-sm italic">
+                      “{f.quote}”
+                    </p>
                   ) : null}
                   {f.suggested_fix ? (
-                    <p className="mt-3 rounded bg-muted px-3 py-2 text-sm">
-                      <span className="font-medium">Fix: </span>
+                    <p className="mt-3 rounded-md bg-brand-tint px-3.5 py-2.5 text-sm">
+                      <span className="font-semibold text-brand">Fix: </span>
                       {f.suggested_fix}
                     </p>
                   ) : null}
                   {f.rule_statement ? (
                     <details className="mt-3 text-sm">
-                      <summary className="cursor-pointer text-muted-foreground">
+                      <summary className="cursor-pointer font-semibold text-brand hover:text-brand-deep">
                         Rule this cites
                       </summary>
                       <p className="mt-2">{f.rule_statement}</p>
                       {f.source_citation ? (
-                        <p className="mt-1 text-xs text-muted-foreground">{f.source_citation}</p>
+                        <p className="mt-1 text-xs text-ink-muted">{f.source_citation}</p>
                       ) : null}
                       {f.applies_because ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1 text-xs text-ink-muted">
                           Applies here because {f.applies_because}
                         </p>
                       ) : null}
@@ -231,27 +258,11 @@ function ReviewResult() {
             </article>
           ))}
 
-          {passes.length > 0 ? (
-            <section className="surface p-6">
-              <p className="eyebrow">What already works</p>
-              <ul className="mt-3 space-y-2 text-sm">
-                {passes.map((f) => (
-                  <li key={f.id}>
-                    <span className="font-medium">{f.title}</span>{" "}
-                    <span className="text-muted-foreground">{f.explanation}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <Link
-            to="/brands/$brandId/review"
-            params={{ brandId: check.data.brand_id }}
-            className="inline-block text-sm underline underline-offset-4"
-          >
-            Review another creative
-          </Link>
+          <Button asChild variant="secondary" className="self-start">
+            <Link to="/brands/$brandId/review" params={{ brandId: check.data.brand_id }}>
+              Review another creative
+            </Link>
+          </Button>
         </div>
       </div>
     </AppShell>
