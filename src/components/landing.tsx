@@ -48,7 +48,7 @@ export function Landing() {
             <button
               type="button"
               onClick={signIn}
-              disabled={busy || user === undefined}
+              disabled={busy}
               className="inline-flex h-12 items-center gap-3 rounded-full bg-card px-6 text-sm font-semibold text-ink shadow-md transition-transform hover:-translate-y-0.5 disabled:opacity-70"
             >
               <GoogleMark />
