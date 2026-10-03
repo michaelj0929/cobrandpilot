@@ -43,7 +43,7 @@ function ReviewResult() {
   const [activePin, setActivePin] = useState<number | null>(null);
 
   const check = useQuery({ queryKey: ["check", checkId], queryFn: () => getCheck(checkId) });
-  const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands });
+  const brands = useQuery({ queryKey: ["brands"], queryFn: () => listBrands() });
   // sub_brand_ids comes from migration 20261002230000; cast until types regenerate.
   const subBrandIds =
     (check.data as { sub_brand_ids?: string[] | null } | null | undefined)?.sub_brand_ids ?? [];
