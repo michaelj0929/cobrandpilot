@@ -44,7 +44,7 @@ export function AppShell({ brand, workspaceId, children }: { brand?: ShellBrand;
 const navItem =
   "flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-ink-muted transition-colors";
 
-function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; workspaceId?: string | null }) {
+function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; workspaceId?: string | null | undefined }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const user = useAuthUser();
   const [collapsed, setCollapsed] = useState(false);
@@ -237,9 +237,8 @@ function BrandNavLink({
     return (
       <span
         aria-disabled
-        title="Open a brand first"
         className={cn(navItem, "cursor-not-allowed opacity-60", collapsed && "md:justify-center md:px-0")}
-        title={label}
+        title="Open a brand first"
       >
         <NavIcon icon={icon} />
         <span className={cn(collapsed && "md:sr-only")}>{label}</span>
