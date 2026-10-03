@@ -3,6 +3,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
+import { PageHead } from "@/components/app-shell";
+import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,7 +100,13 @@ function ReviewIntake() {
       setBusy("Uploading the creative…");
       assetPath = await uploadToBucket("creatives", brandId, asset);
     }
-    const inputType = asset ? (copy.trim() ? "asset+copy" : "asset") : copy.trim() ? "copy" : "brief";
+    const inputType = asset
+      ? copy.trim()
+        ? "asset+copy"
+        : "asset"
+      : copy.trim()
+        ? "copy"
+        : "brief";
     const { data, error: insertError } = await supabase
       .from("validation_checks")
       .insert({
@@ -145,170 +153,200 @@ function ReviewIntake() {
 
   const hasInput = brief.trim().length > 10 || copy.trim().length > 5 || !!asset;
 
+  // Real steps of the running flow, read from the busy message.
+  const running = submit.isPending || assess.isPending;
+  const runSteps: Step[] = (() => {
+    const labels = [
+      ...(asset ? ["Uploading the creative"] : []),
+      assess.isPending ? "Checking what CoBrand can judge" : "Reviewing against the brand model",
+    ];
+    const live = busy?.startsWith("Uploading") ? 0 : labels.length - 1;
+    return labels.map((label, i) => ({
+      label,
+      state: i < live ? "done" : i === live ? "live" : "waiting",
+    }));
+  })();
+
   return (
-    <div className="grid gap-16 lg:grid-cols-[1.25fr_1fr]">
-      <div className="space-y-6">
-        <section className="surface p-6">
-          <h2 className="text-2xl">What are you reviewing?</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            A brief, copy, a visual asset, or all three. CoBrand reviews whatever it is given.
-          </p>
+    <>
+      <PageHead
+        title="Review creative"
+        description="Submit a brief, copy or a visual asset and CoBrand reviews it against the brand model in context."
+      />
 
-          <div className="mt-5 grid gap-1.5">
-            <Label htmlFor="brief">Creative brief</Label>
-            <Textarea
-              id="brief"
-              rows={5}
-              placeholder="Paste the brief, or describe what this creative is meant to do…"
-              value={brief}
-              onChange={(e) => setBrief(e.target.value)}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-self-start"
-              disabled={!!busy || brief.trim().length < 20}
-              onClick={() => readTheBrief.mutate()}
-            >
-              Pull the context out of this brief
-            </Button>
-          </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr]">
+        <div className="flex flex-col gap-5">
+          <section className="surface px-6 py-[22px]">
+            <h2>What are you reviewing?</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              A brief, copy, a visual asset, or all three. CoBrand reviews whatever it is given.
+            </p>
 
-          <div className="mt-4 grid gap-1.5">
-            <Label htmlFor="copy">Copy</Label>
-            <Textarea
-              id="copy"
-              rows={4}
-              placeholder="Headline, body, CTA…"
-              value={copy}
-              onChange={(e) => setCopy(e.target.value)}
-            />
-          </div>
-
-          <div className="mt-4">
-            <Label>Visual asset</Label>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".png,.jpg,.jpeg,.webp,.svg,.pdf"
-              className="hidden"
-              onChange={(e) => setAsset(e.target.files?.[0] ?? null)}
-            />
-            <div className="mt-1.5 flex items-center gap-3">
-              <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()}>
-                Choose file
+            <div className="mt-5 grid gap-1.5">
+              <Label htmlFor="brief">Creative brief</Label>
+              <Textarea
+                id="brief"
+                rows={5}
+                placeholder="Paste the brief, or describe what this creative is meant to do…"
+                value={brief}
+                onChange={(e) => setBrief(e.target.value)}
+              />
+              <Button
+                variant="link"
+                size="sm"
+                className="justify-self-start px-0"
+                disabled={!!busy || brief.trim().length < 20}
+                onClick={() => readTheBrief.mutate()}
+              >
+                Pull the context out of this brief
               </Button>
-              <span className="text-sm text-muted-foreground">
-                {asset ? asset.name : "PNG, JPG, WEBP, SVG or PDF"}
-              </span>
             </div>
-          </div>
-        </section>
 
-        <section className="surface p-6">
-          <h2 className="text-2xl">Context</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Optional, but it decides which rules apply. Leave anything you don't know blank.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {FIELDS.map((field) => (
-              <div key={field.key} className="grid gap-1.5">
-                <Label htmlFor={field.key}>{field.label}</Label>
-                <Input
-                  id={field.key}
-                  placeholder={field.placeholder}
-                  value={context[field.key] ?? ""}
-                  onChange={(e) => set(field.key, e.target.value)}
-                />
-              </div>
-            ))}
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label htmlFor="key_message">Key message</Label>
-              <Input
-                id="key_message"
-                value={keyMessage}
-                onChange={(e) => setKeyMessage(e.target.value)}
+            <div className="mt-3 grid gap-1.5">
+              <Label htmlFor="copy">Copy</Label>
+              <Textarea
+                id="copy"
+                rows={4}
+                placeholder="Headline, body, CTA…"
+                value={copy}
+                onChange={(e) => setCopy(e.target.value)}
               />
             </div>
-          </div>
-        </section>
 
-        <div className="flex flex-wrap gap-3">
-          <Button disabled={!hasInput || !!busy} onClick={() => submit.mutate()}>
-            {busy ? busy : "Review creative"}
-          </Button>
-          <Button
-            variant="secondary"
-            disabled={!hasInput || !!busy}
-            onClick={() => assess.mutate()}
-          >
-            Check readiness first
-          </Button>
+            <div className="mt-5">
+              <Label>Visual asset</Label>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp,.svg,.pdf"
+                className="hidden"
+                onChange={(e) => setAsset(e.target.files?.[0] ?? null)}
+              />
+              <div className="mt-1.5 flex flex-wrap items-center gap-3 rounded-md border-[1.5px] border-dashed border-brand-soft px-4 py-3">
+                <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()}>
+                  Choose file
+                </Button>
+                <span className="min-w-0 truncate text-sm text-ink-muted">
+                  {asset ? asset.name : "PNG, JPG, WEBP, SVG or PDF"}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <section className="surface px-6 py-[22px]">
+            <h2>Context</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Optional, but it decides which rules apply. Leave anything you don't know blank.
+            </p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {FIELDS.map((field) => (
+                <div key={field.key} className="grid gap-1.5">
+                  <Label htmlFor={field.key}>{field.label}</Label>
+                  <Input
+                    id={field.key}
+                    placeholder={field.placeholder}
+                    value={context[field.key] ?? ""}
+                    onChange={(e) => set(field.key, e.target.value)}
+                  />
+                </div>
+              ))}
+              <div className="grid gap-1.5 sm:col-span-2">
+                <Label htmlFor="key_message">Key message</Label>
+                <Input
+                  id="key_message"
+                  value={keyMessage}
+                  onChange={(e) => setKeyMessage(e.target.value)}
+                />
+              </div>
+            </div>
+          </section>
+
+          <div className="flex flex-wrap gap-3">
+            <Button disabled={!hasInput || !!busy} onClick={() => submit.mutate()}>
+              {busy ? busy : "Review creative"}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!hasInput || !!busy}
+              onClick={() => assess.mutate()}
+            >
+              Check readiness first
+            </Button>
+          </div>
+          {busy && !running ? <BusyLine text={busy} /> : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+        <aside className="flex flex-col gap-5">
+          {running ? (
+            <LoadingPanel title={busy ?? "Getting started…"}>
+              <StepList steps={runSteps} />
+            </LoadingPanel>
+          ) : null}
+
+          {report ? (
+            <section className="rounded-lg bg-brand-tint px-6 py-[22px]">
+              <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">
+                Brand readiness for this review
+              </h2>
+              <p className="stat mt-1">{Math.round(report.score)}%</p>
+              <p className="text-sm">{report.can_do}</p>
+              {report.cannot_do ? (
+                <p className="mt-2 text-sm text-ink-muted">{report.cannot_do}</p>
+              ) : null}
+              {report.missing?.length ? (
+                <div className="mt-4 rounded-md bg-yellow-tint px-4 py-3">
+                  <p className="text-[13px] font-semibold">Missing for this review</p>
+                  <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm">
+                    {report.missing.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {report.available?.length ? (
+                <div className="mt-3 rounded-md bg-green-tint px-4 py-3">
+                  <p className="text-[13px] font-semibold text-green">Available</p>
+                  <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm">
+                    {report.available.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </section>
+          ) : !running ? (
+            <div className="rounded-lg bg-sky-tint px-5 py-4 text-sm">
+              CoBrand can tell you what it is able to judge before it reviews anything — useful when
+              the brand model is still thin.
+            </div>
+          ) : null}
+
+          <section className="surface px-6 py-[22px]">
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Past reviews</h2>
+            <ul className="mt-1.5 text-sm">
+              {(history.data ?? []).slice(0, 8).map((check) => (
+                <li key={check.id} className="border-t border-line-soft first:border-t-0">
+                  <a
+                    href={`/reviews/${check.id}`}
+                    className="-mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors hover:bg-page"
+                  >
+                    <span className="truncate font-medium">
+                      {check.asset_name ?? check.label ?? check.input_type}
+                    </span>
+                    <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-brand-tint px-2.5 text-xs font-semibold text-brand">
+                      {check.score === null ? check.status : check.score}
+                    </span>
+                  </a>
+                </li>
+              ))}
+              {(history.data ?? []).length === 0 ? (
+                <li className="py-3 text-xs text-ink-muted">Nothing reviewed yet.</li>
+              ) : null}
+            </ul>
+          </section>
+        </aside>
       </div>
-
-      <aside className="space-y-6">
-        {report ? (
-          <div className="surface p-6">
-            <p className="eyebrow">Brand readiness for this review</p>
-            <p className="display mt-2 text-4xl">{Math.round(report.score)}%</p>
-            <p className="mt-2 text-sm">{report.can_do}</p>
-            {report.cannot_do ? (
-              <p className="mt-2 text-sm text-muted-foreground">{report.cannot_do}</p>
-            ) : null}
-            {report.missing?.length ? (
-              <div className="mt-4">
-                <p className="eyebrow">Missing for this review</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {report.missing.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {report.available?.length ? (
-              <div className="mt-4">
-                <p className="eyebrow">Available</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {report.available.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <div className="surface-quiet border-dashed p-5 text-sm text-muted-foreground">
-            CoBrand can tell you what it is able to judge before it reviews anything — useful when
-            the brand model is still thin.
-          </div>
-        )}
-
-        <div className="surface p-6">
-          <p className="eyebrow">Past reviews</p>
-          <ul className="mt-3 space-y-3 text-sm">
-            {(history.data ?? []).slice(0, 8).map((check) => (
-              <li key={check.id}>
-                <a
-                  href={`/reviews/${check.id}`}
-                  className="flex items-center justify-between gap-3 hover:underline"
-                >
-                  <span className="truncate">
-                    {check.asset_name ?? check.label ?? check.input_type}
-                  </span>
-                  <span className="shrink-0 text-muted-foreground">
-                    {check.score === null ? check.status : check.score}
-                  </span>
-                </a>
-              </li>
-            ))}
-            {(history.data ?? []).length === 0 ? (
-              <li className="text-xs text-muted-foreground">Nothing reviewed yet.</li>
-            ) : null}
-          </ul>
-        </div>
-      </aside>
-    </div>
+    </>
   );
 }
