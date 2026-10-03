@@ -180,13 +180,13 @@ export function PageHead({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
-      <div className="max-w-2xl">
-        {eyebrow ? <p className="eyebrow mb-4">{eyebrow}</p> : null}
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-5">
+      <div className="flex max-w-[600px] flex-col gap-2.5">
+        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1>{title}</h1>
-        {description ? <p className="lede mt-5">{description}</p> : null}
+        {description ? <p className="lede">{description}</p> : null}
       </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
     </div>
   );
 }
@@ -201,19 +201,20 @@ export function StatusDot({ state }: { state: "confirmed" | "inferred" | "missin
   return <span className={`inline-block size-2 rounded-full ${color}`} aria-hidden />;
 }
 
+/** Status chip: green = on-brand/done, attention yellow = needs review. */
 export function StateBadge({ state, label }: { state: string; label?: string }) {
   const map: Record<string, string> = {
-    confirmed: "text-[var(--confirmed)] bg-[var(--confirmed)]/10",
-    inferred: "text-[var(--inferred)] bg-[var(--inferred)]/12",
-    proposed: "text-[var(--inferred)] bg-[var(--inferred)]/12",
-    missing: "text-[var(--missing)] bg-[var(--missing)]/10",
-    vague: "text-[var(--inferred)] bg-[var(--inferred)]/12",
-    archived: "text-muted-foreground bg-muted",
+    confirmed: "bg-green-tint text-green",
+    inferred: "bg-attention text-ink",
+    proposed: "bg-attention text-ink",
+    vague: "bg-attention text-ink",
+    missing: "bg-[var(--missing)]/10 text-[var(--missing)]",
+    archived: "bg-page text-ink-muted",
   };
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize tracking-wide ${
-        map[state] ?? "bg-muted text-muted-foreground"
+      className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold capitalize ${
+        map[state] ?? "bg-page text-ink-muted"
       }`}
     >
       {label ?? state}
@@ -223,9 +224,9 @@ export function StateBadge({ state, label }: { state: string; label?: string }) 
 
 export function Empty({ title, body }: { title: string; body: string }) {
   return (
-    <div className="surface-quiet border-dashed px-8 py-14 text-center">
-      <p className="display text-2xl">{title}</p>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">{body}</p>
+    <div className="rounded-lg border-[1.5px] border-dashed border-line-mid bg-card px-8 py-12 text-center">
+      <h2>{title}</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -243,13 +244,11 @@ export function SectionHead({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-      <div className="max-w-xl">
-        {eyebrow ? <p className="eyebrow mb-2.5">{eyebrow}</p> : null}
+    <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+      <div className="flex max-w-xl flex-col gap-1.5">
+        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h2>{title}</h2>
-        {description ? (
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
-        ) : null}
+        {description ? <p className="text-sm text-ink-muted">{description}</p> : null}
       </div>
       {actions}
     </div>

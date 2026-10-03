@@ -2,11 +2,11 @@ import { useEffect } from "react";
 
 import { isColor, ruleValue, type BrandRule } from "@/lib/cobrand-client";
 
-/** A quiet progress meter — hairline track, accent fill. */
+/** Score bar: 8px brand-tint track, brand fill. */
 export function Meter({ value, tone }: { value: number | null; tone?: string }) {
   const pct = Math.max(0, Math.min(100, value ?? 0));
   return (
-    <div className="h-[3px] w-full overflow-hidden rounded-full bg-muted">
+    <div className="h-2 w-full overflow-hidden rounded-full bg-brand-tint">
       <div
         className="h-full rounded-full transition-[width] duration-700 ease-out"
         style={{ width: `${pct}%`, backgroundColor: tone ?? "var(--brand-accent)" }}
@@ -26,7 +26,7 @@ export function ScoreRing({
   label?: string;
 }) {
   const pct = value === null ? 0 : Math.max(0, Math.min(100, value));
-  const stroke = size < 60 ? 4 : 6;
+  const stroke = size < 60 ? 5 : 7;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
 
@@ -41,7 +41,7 @@ export function ScoreRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--color-muted)"
+          stroke="var(--brand-soft)"
           strokeWidth={stroke}
         />
         <circle
@@ -58,10 +58,12 @@ export function ScoreRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="display leading-none" style={{ fontSize: size * 0.34 }}>
+        <span className="leading-none font-semibold text-ink" style={{ fontSize: size * 0.31 }}>
           {value === null ? "—" : Math.round(value)}
         </span>
-        {label ? <span className="eyebrow mt-1 text-[9px]">{label}</span> : null}
+        {label ? (
+          <span className="mt-1 text-[10px] font-semibold text-ink-muted">{label}</span>
+        ) : null}
       </div>
     </div>
   );
@@ -73,8 +75,8 @@ export function Swatch({ hex, name, note }: { hex: string; name: string; note?: 
     <figure className="surface surface-hover overflow-hidden">
       <div className="h-24 w-full" style={{ backgroundColor: hex }} aria-hidden />
       <figcaption className="px-4 py-3">
-        <p className="text-sm font-medium">{name}</p>
-        <p className="mt-0.5 font-mono text-xs uppercase text-muted-foreground">{hex}</p>
+        <p className="text-sm font-semibold">{name}</p>
+        <p className="mt-0.5 font-mono text-xs uppercase text-ink-muted">{hex}</p>
         {note ? <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{note}</p> : null}
       </figcaption>
     </figure>
@@ -92,7 +94,7 @@ export function TypeSpecimen({
   note?: string;
 }) {
   useLoadFont(family);
-  const stack = `"${family}", var(--font-display), serif`;
+  const stack = `"${family}", var(--font-sans)`;
   return (
     <figure className="surface surface-hover px-5 py-5">
       <p className="truncate leading-none" style={{ fontFamily: stack, fontSize: "2.5rem" }}>
@@ -104,8 +106,8 @@ export function TypeSpecimen({
       >
         The quick brown fox jumps over the lazy dog — 0123456789
       </p>
-      <figcaption className="mt-4 border-t border-border/60 pt-3">
-        <p className="text-sm font-medium">{name}</p>
+      <figcaption className="mt-4 border-t border-line-soft pt-3">
+        <p className="text-sm font-semibold">{name}</p>
         {note ? <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{note}</p> : null}
       </figcaption>
     </figure>
