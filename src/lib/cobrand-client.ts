@@ -53,11 +53,10 @@ function asBrand(row: Tables<"brands">): Brand {
   return { ...r, parent_brand_id: parent, kind: r.kind ?? (parent ? "sub_brand" : "master") };
 }
 
-export async function listBrands(): Promise<Brand[]> {
-  const { data, error } = await supabase
-    .from("brands")
-    .select("*")
-    .order("created_at", { ascending: false });
+export async function listBrands(workspaceId?: string): Promise<Brand[]> {
+  let query = supabase.from("brands").select("*");
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query.order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(asBrand);
 }
@@ -69,8 +68,8 @@ export async function getBrand(brandId: string): Promise<Brand | null> {
 }
 
 /** The workspace's master brand plus its sub-brands / product lines. */
-export async function getBrandFamily() {
-  const brands = await listBrands();
+export async function getBrandFamily(workspaceId: string) {
+  const brands = await listBrands(workspaceId);
   const master = brands.find((b) => b.parent_brand_id === null) ?? null;
   const subBrands = master
     ? brands
@@ -87,6 +86,7 @@ export async function createBrand(input: {
   description?: string | null;
   parentBrandId?: string;
   kind?: BrandKind;
+  workspaceId?: string;
 }) {
   const row = {
     name: input.name.trim(),
@@ -94,6 +94,7 @@ export async function createBrand(input: {
     primary_market: input.primaryMarket?.trim() || null,
     description: input.description?.trim() || null,
     parent_brand_id: input.parentBrandId ?? null,
+    workspace_id: input.workspaceId ?? null,
     kind: input.parentBrandId ? (input.kind ?? "sub_brand") : "master",
   };
   const { data, error } = await supabase
@@ -258,3 +259,37 @@ export type ProposedEdits = {
   changes: ProposedEdit[];
   question: string | null;
 };
+
+export type Workspace = Tables<"workspaces">;
+
+export async function listWorkspaces() {
+  const { data, error } = await supabase
+    .from("workspaces")
+    .select("*, brands(id, name, kind, parent_brand_id, current_version)")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getWorkspace(id: string) {
+  const { data, error } = await supabase.from("workspaces").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function createWorkspace(name: string) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Please sign in again.");
+  const { data, error } = await supabase
+    .from("workspaces")
+    .insert({ name: name.trim(), owner_id: auth.user.id })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function renameWorkspace(id: string, name: string) {
+  const { error } = await supabase.from("workspaces").update({ name: name.trim() }).eq("id", id);
+  if (error) throw error;
+}
