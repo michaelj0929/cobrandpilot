@@ -87,6 +87,7 @@ function ReviewResult() {
         id: check.data.brand_id,
         name: check.data.brands?.name ?? null,
         version: check.data.brands?.current_version ?? null,
+        workspaceId: (brands.data ?? []).find((brand) => brand.id === check.data.brand_id)?.workspace_id ?? null,
       }}
     >
       <div className="rise-enter mb-7 flex flex-wrap items-end justify-between gap-6">

@@ -80,7 +80,7 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
       aria-label="Main"
       className={cn("flex flex-col gap-0.5 border-b border-line-soft bg-card p-4 md:sticky md:top-0 md:h-screen md:shrink-0 md:border-r md:border-b-0 md:pt-8 md:pb-6 md:transition-[width,padding] md:duration-200", collapsed ? "md:w-[72px] md:px-3" : "md:w-[236px] md:px-4")}
     >
-      <div className="flex items-start justify-between gap-1 pb-3 md:pb-8">
+      <div className={cn("flex items-start justify-between gap-1 pb-3 md:pb-8", collapsed && "md:flex-col md:items-center md:pb-4")}>
         <Link
           to="/workspaces"
           aria-label="CoBrand home"
@@ -93,7 +93,7 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
         <Button variant="ghost" size="icon" className="md:hidden" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen} onClick={() => setMobileOpen((value) => !value)}>
           <Menu aria-hidden />
         </Button>
-        <Button variant="ghost" size="icon" className={cn("hidden shrink-0 md:inline-flex", collapsed && "absolute top-[80px] left-3")} aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} title={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={toggleCollapsed}>
+        <Button variant="ghost" size="icon" className="hidden shrink-0 md:inline-flex" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} title={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={toggleCollapsed}>
           {collapsed ? <ChevronRight aria-hidden /> : <ChevronLeft aria-hidden />}
         </Button>
       </div>
@@ -140,7 +140,7 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
           <span className={labelClass}>Workspaces</span>
         </Link>
       )}
-      {workspaceId && brand ? <><BrandNavLink
+      {workspaceId ? <><BrandNavLink
         brandId={brand?.id}
         to="/brands/$brandId"
         icon={Upload}
