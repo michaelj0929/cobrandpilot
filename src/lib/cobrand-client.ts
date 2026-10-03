@@ -105,6 +105,11 @@ export async function createBrand(input: {
     if (error.code === "23505") {
       throw new Error("This workspace already has a master brand. Add a sub-brand instead.");
     }
+    if (error.code === "PGRST204" || /parent_brand_id|'kind' column/.test(error.message)) {
+      throw new Error(
+        "Sub-brands need a database update that hasn't been applied yet (migration 20261002230000_master_brand_and_sub_brands). Ask Lovable to run it, then try again.",
+      );
+    }
     throw error;
   }
   return data.id;

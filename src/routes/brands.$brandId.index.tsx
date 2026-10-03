@@ -7,6 +7,7 @@ import { Hammer, Upload } from "lucide-react";
 
 import { Empty, PageHead, SectionHead, StateBadge } from "@/components/app-shell";
 import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
+import { SubBrandsPanel } from "@/components/sub-brands";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
@@ -533,6 +534,12 @@ function SourcesAndGaps() {
           )}
         </section>
       </div>
+
+      {!isSub && brand.data ? (
+        <div className="mt-10">
+          <SubBrandsPanel master={brand.data} />
+        </div>
+      ) : null}
     </>
   );
 }

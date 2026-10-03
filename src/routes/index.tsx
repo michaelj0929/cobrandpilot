@@ -9,13 +9,6 @@ import { Meter, ScoreRing } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   BRAND_KIND_LABEL,
@@ -23,7 +16,6 @@ import {
   getBrandFamily,
   listChecks,
   type Brand,
-  type BrandKind,
 } from "@/lib/cobrand-client";
 
 export const Route = createFileRoute("/")({
@@ -241,85 +233,24 @@ function MasterBrandSetup() {
 }
 
 function SubBrandSection({ master, subBrands }: { master: Brand; subBrands: Brand[] }) {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [kind, setKind] = useState<BrandKind>("product_line");
-  const [description, setDescription] = useState("");
-
-  const create = useMutation({
-    mutationFn: () => createBrand({ name, description, parentBrandId: master.id, kind }),
-    onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ["brand-family"] });
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
-      navigate({ to: "/brands/$brandId", params: { brandId: id } });
-    },
-  });
-
   return (
     <>
       <SectionHead
         title="Sub-brands and product lines"
         description={`Their own guidelines, on top of ${master.name}. When you check content, pick which ones apply.`}
         actions={
-          <Button variant="secondary" size="sm" onClick={() => setOpen((v) => !v)}>
-            {open ? "Cancel" : "New sub-brand or product line"}
+          <Button asChild variant="secondary" size="sm">
+            <Link to="/brands/$brandId" params={{ brandId: master.id }} hash="sub-brands">
+              New sub-brand or product line
+            </Link>
           </Button>
         }
       />
 
-      {open ? (
-        <div className="reveal-enter surface mb-5 px-6 py-[22px]">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="sub-name">Name</Label>
-              <Input
-                id="sub-name"
-                placeholder="e.g. Air Max"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Type</Label>
-              <Select value={kind} onValueChange={(v) => setKind(v as BrandKind)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="product_line">Product line</SelectItem>
-                  <SelectItem value="sub_brand">Sub-brand</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label htmlFor="sub-description">What makes it different</Label>
-              <Textarea
-                id="sub-description"
-                rows={2}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button
-            className="mt-6"
-            disabled={!name.trim() || create.isPending}
-            onClick={() => create.mutate()}
-          >
-            {create.isPending ? "Creating…" : "Create and upload guidelines"}
-          </Button>
-          {create.isError ? (
-            <p className="mt-4 text-sm text-destructive">{(create.error as Error).message}</p>
-          ) : null}
-        </div>
-      ) : null}
-
       {subBrands.length === 0 ? (
         <Empty
           title="No sub-brands yet"
-          body="Add a sub-brand or product line to upload guidelines that only apply to it."
+          body="Add a sub-brand or product line from Uploads, along with the guidelines that only apply to it."
         />
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
