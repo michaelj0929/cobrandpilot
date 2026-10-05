@@ -198,7 +198,7 @@ function ReviewIntake() {
         format: creating,
         objective,
         audience,
-        ...(keyMessage ? { key_message: keyMessage } : {}) },
+        ...(keyMessage ? { key_message: keyMessage } : {}),
       },
       status: "draft",
       // From migration 20261002230000; cast until types regenerate. Only sent
