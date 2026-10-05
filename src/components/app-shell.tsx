@@ -84,7 +84,7 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
         <Link
           to="/workspaces"
           aria-label="CoBrand home"
-          title="Workspaces"
+          title="Brand Hub"
           className={cn("inline-flex flex-col self-start px-3 text-[26px] leading-[0.8] font-extrabold text-ink", collapsed && "md:px-1 md:text-xl")}
         >
           <span>co</span>
@@ -132,12 +132,12 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
       ) : (
         <Link
           to="/workspaces"
-          title="Workspaces"
-          aria-label="Workspaces"
+          title="Brand Hub"
+          aria-label="Brand Hub"
           className={itemClass(isOn.home)}
         >
           <NavIcon icon={House} />
-          <span className={labelClass}>Workspaces</span>
+          <span className={labelClass}>Brand Hub</span>
         </Link>
       )}
       {workspaceId ? <><BrandNavLink
