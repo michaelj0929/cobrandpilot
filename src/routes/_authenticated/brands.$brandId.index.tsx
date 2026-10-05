@@ -60,7 +60,7 @@ function SourcesAndGaps() {
   const propose = useServerFn(proposeForGap);
   const addRule = useServerFn(addManualRule);
 
-  const [classification, setClassification] = useState<string>("auto");
+  const [classification, setClassification] = useState<string>("");
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -110,7 +110,7 @@ function SourcesAndGaps() {
         await createSourceFromFile(
           brandId,
           file,
-          classification === "auto" ? undefined : classification,
+          classification || undefined,
         );
       }
       queryClient.invalidateQueries({ queryKey: ["sources", brandId] });
@@ -127,7 +127,7 @@ function SourcesAndGaps() {
         brandId,
         pasteTitle,
         pasteText,
-        classification === "auto" ? undefined : classification,
+        classification || undefined,
       );
       setPasteTitle("");
       setPasteText("");
@@ -267,13 +267,12 @@ function SourcesAndGaps() {
         <section className="flex flex-col gap-5">
           <div className="surface flex flex-col gap-5 px-6 py-[22px]">
             <div className="grid max-w-sm gap-1.5">
-              <Label>What is this material?</Label>
+              <Label>Choose the document type that best fits</Label>
               <Select value={classification} onValueChange={setClassification}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select a document type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="auto">Let CoBrand decide</SelectItem>
                   {CLASSIFICATIONS.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}

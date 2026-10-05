@@ -38,11 +38,11 @@ export function Landing() {
       <main className="flex flex-1 items-center px-6 py-16 md:px-14">
         <div className="rise-enter flex max-w-2xl flex-col gap-6">
           <h1 className="text-5xl leading-[1.05] font-extrabold tracking-tight md:text-7xl">
-            Brand truth for every creative.
+            Your Source of Brand Truth
           </h1>
           <p className="max-w-lg text-lg text-on-brand/80">
-            Turn your guidelines into a living brand system, and check every brief, line of copy and
-            asset against it.
+            Upload your brand copy, strategy decks, and supporting materials to create a living
+            source of truth that keeps every decision aligned with your brand.
           </p>
           <div className="flex flex-col items-start gap-3 pt-2">
             <button

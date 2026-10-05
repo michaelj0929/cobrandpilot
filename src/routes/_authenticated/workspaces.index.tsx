@@ -14,9 +14,9 @@ import { displayName, useAuthUser } from "@/hooks/use-auth";
 export const Route = createFileRoute("/_authenticated/workspaces/")({
   head: () => ({
     meta: [
-      { title: "Your workspaces — CoBrand" },
-      { name: "description", content: "Pick a workspace. Each workspace holds one master brand." },
-      { property: "og:title", content: "Your workspaces — CoBrand" },
+      { title: "Brand Hub — CoBrand" },
+      { name: "description", content: "Choose a brand. Each brand has one master brand system." },
+      { property: "og:title", content: "Brand Hub — CoBrand" },
       { property: "og:description", content: "Each CoBrand workspace holds one master brand." },
     ],
   }),
@@ -55,12 +55,12 @@ function WorkspacesPage() {
     <AppShell>
       <PageHead
         {...(user ? { eyebrow: `Hi, ${displayName(user).split(" ")[0]}` } : {})}
-        title="Your workspaces"
+        title="Brand Hub"
         description="Each workspace holds one master brand, plus its sub-brands and product lines."
         actions={
           <Button onClick={() => setOpen((v) => !v)}>
             <Plus aria-hidden />
-            New workspace
+            New Brand
           </Button>
         }
       />

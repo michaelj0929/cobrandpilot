@@ -7,6 +7,7 @@ import { ArrowRight, LayoutGrid, Upload } from "lucide-react";
 import { AppShell, Empty, PageHead, SectionHead } from "@/components/app-shell";
 import { Meter, ScoreRing } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
+import { CreatableCombobox } from "@/components/ui/creatable-combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +18,38 @@ import {
   listChecks,
   type Brand,
 } from "@/lib/cobrand-client";
+
+const BRAND_CATEGORIES = [
+  "Automotive",
+  "Beauty & Personal Care",
+  "Consumer Goods",
+  "Education",
+  "Entertainment & Media",
+  "Fashion & Apparel",
+  "Financial Services",
+  "Food & Beverage",
+  "Healthcare",
+  "Hospitality & Travel",
+  "Nonprofit",
+  "Professional Services",
+  "Real Estate",
+  "Retail & E-commerce",
+  "Sports & Fitness",
+  "Technology",
+];
+
+const PRIMARY_MARKETS = [
+  "Global",
+  "United States",
+  "Canada",
+  "United Kingdom",
+  "Europe",
+  "Australia & New Zealand",
+  "Asia-Pacific",
+  "Latin America",
+  "Middle East & North Africa",
+  "Sub-Saharan Africa",
+];
 
 export const Route = createFileRoute("/_authenticated/workspaces/$workspaceId")({
   head: () => ({
@@ -199,24 +232,28 @@ function MasterBrandSetup({ workspaceId }: { workspaceId: string }) {
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="category">Category</Label>
-            <Input
+            <CreatableCombobox
               id="category"
-              placeholder="e.g. financial services"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onValueChange={setCategory}
+              options={BRAND_CATEGORIES}
+              placeholder="Select or enter a category"
+              searchPlaceholder="Search categories…"
             />
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="market">Primary market</Label>
-            <Input
+            <CreatableCombobox
               id="market"
-              placeholder="e.g. UK"
               value={market}
-              onChange={(e) => setMarket(e.target.value)}
+              onValueChange={setMarket}
+              options={PRIMARY_MARKETS}
+              placeholder="Select or enter a market"
+              searchPlaceholder="Search markets…"
             />
           </div>
           <div className="grid gap-1.5 sm:col-span-2">
-            <Label htmlFor="description">Anything CoBrand should know</Label>
+            <Label htmlFor="description">Provide a short description of the brand</Label>
             <Textarea
               id="description"
               rows={3}
