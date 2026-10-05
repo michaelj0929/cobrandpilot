@@ -10,13 +10,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CreatableCombobox } from "@/components/ui/creatable-combobox";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import {
+  AUDIENCES,
   BRAND_KIND_LABEL,
+  CREATIVE_TYPES,
   MAX_FILE_BYTES,
+  OBJECTIVES,
   getBrandFamilyOf,
-  listChecks,
   uploadToBucket,
 } from "@/lib/cobrand-client";
 import { readBrief } from "@/lib/cobrand.functions";
@@ -54,9 +57,6 @@ type Readiness = {
 };
 
 const FIELDS = [
-  { key: "format", label: "Format", placeholder: "paid social, email, OOH…" },
-  { key: "objective", label: "Objective", placeholder: "awareness, conversion…" },
-  { key: "audience", label: "Audience", placeholder: "who it speaks to" },
   { key: "market", label: "Market", placeholder: "UK, DACH…" },
   { key: "product", label: "Product", placeholder: "which product or service" },
   { key: "campaign", label: "Campaign", placeholder: "campaign name, if any" },
@@ -74,7 +74,17 @@ function ReviewIntake() {
 
   const [brief, setBrief] = useState("");
   const [copy, setCopy] = useState("");
-  const [asset, setAsset] = useState<File | null>(null);
+  const [assets, setAssets] = useState<File[]>([]);
+  const asset = assets[0] ?? null;
+  const today = new Date().toISOString().slice(0, 10);
+  const [title, setTitle] = useState("");
+  const [reviewDate, setReviewDate] = useState(today);
+  const [deadline, setDeadline] = useState("");
+  const [creating, setCreating] = useState("");
+  const [objective, setObjective] = useState("");
+  const [audience, setAudience] = useState("");
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const projectReady = !!title.trim() && !!reviewDate && !!creating && !!objective && !!audience;
   const [context, setContext] = useState<Record<string, string>>({});
   const [keyMessage, setKeyMessage] = useState("");
   const [checkId, setCheckId] = useState<string | null>(null);
@@ -82,10 +92,6 @@ function ReviewIntake() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const history = useQuery({
-    queryKey: ["checks", brandId],
-    queryFn: () => listChecks(brandId),
-  });
 
   // Checks run on the master brand plus any selected sub-brands / product lines.
   const family = useQuery({ queryKey: ["brand-family", "of", brandId], queryFn: () => getBrandFamilyOf(brandId) });
@@ -125,12 +131,16 @@ function ReviewIntake() {
     mutationFn: async () => {
       setBusy("Reading the brief…");
       const result = await prefill({ data: { brief } });
-      setContext((c) => ({
-        ...c,
-        ...Object.fromEntries(
-          Object.entries(result).filter(([k, v]) => v && k !== "key_message") as [string, string][],
-        ),
-      }));
+      const picked = Object.fromEntries(
+        Object.entries(result).filter(([k, v]) => v && k !== "key_message") as [string, string][],
+      );
+      if (picked["format"] && !creating) setCreating(picked["format"]);
+      if (picked["objective"] && !objective) setObjective(picked["objective"]);
+      if (picked["audience"] && !audience) setAudience(picked["audience"]);
+      delete picked["format"];
+      delete picked["objective"];
+      delete picked["audience"];
+      setContext((c) => ({ ...c, ...picked }));
       if (result.key_message) setKeyMessage(result.key_message);
     },
     onSettled: () => setBusy(null),
@@ -139,7 +149,28 @@ function ReviewIntake() {
 
   const subBrandIds = selectedSubs.filter((id) => subBrands.some((b) => b.id === id));
 
-  const createCheck = async () => {
+  const ensureProject = async () => {
+    if (projectId) return projectId;
+    const { data, error: projectError } = await supabase
+      .from("review_projects")
+      .insert({
+        brand_id: brandId,
+        title: title.trim(),
+        review_date: reviewDate,
+        deadline: deadline || null,
+        creating,
+        objective,
+        audience,
+      })
+      .select("id")
+      .single();
+    if (projectError) throw projectError;
+    setProjectId(data.id);
+    return data.id;
+  };
+
+  const createCheck = async (asset: File | null = assets[0] ?? null) => {
+    const project = await ensureProject();
     let assetPath: string | null = null;
     if (asset) {
       if (asset.size > MAX_FILE_BYTES) throw new Error("That file is larger than 25 MB.");
@@ -161,7 +192,14 @@ function ReviewIntake() {
       asset_path: assetPath,
       asset_name: asset?.name ?? null,
       asset_mime: asset?.type ?? null,
-      creative_context: { ...context, ...(keyMessage ? { key_message: keyMessage } : {}) },
+      project_id: project,
+      creative_context: {
+        ...context,
+        format: creating,
+        objective,
+        audience,
+        ...(keyMessage ? { key_message: keyMessage } : {}) },
+      },
       status: "draft",
       // From migration 20261002230000; cast until types regenerate. Only sent
       // when used, so master-only checks don't depend on the new column.
@@ -192,16 +230,26 @@ function ReviewIntake() {
   const submit = useMutation({
     mutationFn: async () => {
       setError(null);
-      const id = checkId ?? (await createCheck());
-      setBusy("Reviewing against the brand model…");
-      await review({ data: { checkId: id } });
-      navigate({ to: "/reviews/$checkId", params: { checkId: id } });
+      const first = checkId ?? (await createCheck(assets[0] ?? null));
+      const ids = [first];
+      for (const file of assets.slice(1)) ids.push(await createCheck(file));
+      for (const [i, id] of ids.entries()) {
+        setBusy(
+          ids.length > 1
+            ? `Reviewing asset ${i + 1} of ${ids.length}…`
+            : "Reviewing against the brand model…",
+        );
+        await review({ data: { checkId: id } });
+      }
+      if (ids.length === 1) navigate({ to: "/reviews/$checkId", params: { checkId: first } });
+      else navigate({ to: "/brands/$brandId/reviews", params: { brandId } });
     },
     onSettled: () => setBusy(null),
     onError: (e) => setError((e as Error).message),
   });
 
-  const hasInput = brief.trim().length > 10 || copy.trim().length > 5 || !!asset;
+  const hasInput =
+    projectReady && (brief.trim().length > 10 || copy.trim().length > 5 || assets.length > 0);
 
   // Real steps of the running flow, read from the busy message.
   const running = submit.isPending || assess.isPending;
@@ -226,6 +274,46 @@ function ReviewIntake() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr]">
         <div className="flex flex-col gap-5">
+          <section className="surface px-6 py-[22px]">
+            <h2>Review project</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Group every asset for one piece of work under a single review. All fields marked * are
+              required.
+            </p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-1.5 sm:col-span-2">
+                <Label htmlFor="title">Review title *</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g. Spring launch — paid social"
+                  value={title}
+                  disabled={!!projectId}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="review_date">Review date *</Label>
+                <Input id="review_date" type="date" value={reviewDate} disabled={!!projectId} onChange={(e) => setReviewDate(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="deadline">Deadline</Label>
+                <Input id="deadline" type="date" value={deadline} min={reviewDate} disabled={!!projectId} onChange={(e) => setDeadline(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5 sm:col-span-2">
+                <Label htmlFor="creating">What are you creating? *</Label>
+                <CreatableCombobox id="creating" value={creating} onValueChange={setCreating} options={CREATIVE_TYPES} placeholder="Select or type a format" searchPlaceholder="Search or add a format…" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="objective">What is the objective? *</Label>
+                <CreatableCombobox id="objective" value={objective} onValueChange={setObjective} options={OBJECTIVES} placeholder="Select or type an objective" searchPlaceholder="Search or add an objective…" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="audience">Who is this for? *</Label>
+                <CreatableCombobox id="audience" value={audience} onValueChange={setAudience} options={AUDIENCES} placeholder="Select or type an audience" searchPlaceholder="Search or add an audience…" />
+              </div>
+            </div>
+          </section>
+
           <section className="surface px-6 py-[22px]">
             <h2>What are you reviewing?</h2>
             <p className="mt-1 text-sm text-ink-muted">
@@ -270,16 +358,47 @@ function ReviewIntake() {
                 type="file"
                 accept=".png,.jpg,.jpeg,.webp,.svg,.pdf"
                 className="hidden"
-                onChange={(e) => setAsset(e.target.files?.[0] ?? null)}
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length) setAssets((current) => [...current, ...files]);
+                  e.target.value = "";
+                  setCheckId(null);
+                  setReport(null);
+                }}
               />
               <div className="mt-1.5 flex flex-wrap items-center gap-3 rounded-md border-[1.5px] border-dashed border-brand-soft px-4 py-3">
                 <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()}>
-                  Choose file
+                  {assets.length ? "Add more files" : "Choose files"}
                 </Button>
                 <span className="min-w-0 truncate text-sm text-ink-muted">
-                  {asset ? asset.name : "PNG, JPG, WEBP, SVG or PDF"}
+                  {assets.length
+                    ? `${assets.length} ${assets.length === 1 ? "asset" : "assets"} in this review`
+                    : "PNG, JPG, WEBP, SVG or PDF — add as many as belong to this review"}
                 </span>
               </div>
+              {assets.length ? (
+                <ul className="mt-2 text-sm">
+                  {assets.map((file, i) => (
+                    <li key={`${file.name}-${i}`} className="flex items-center justify-between gap-3 border-t border-line-soft py-2 first:border-t-0">
+                      <span className="truncate">{file.name}</span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="px-0"
+                        disabled={!!busy}
+                        onClick={() => {
+                          setAssets((current) => current.filter((_, j) => j !== i));
+                          setCheckId(null);
+                          setReport(null);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </section>
 
@@ -413,29 +532,6 @@ function ReviewIntake() {
             </div>
           ) : null}
 
-          <section className="surface px-6 py-[22px]">
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Past reviews</h2>
-            <ul className="mt-1.5 text-sm">
-              {(history.data ?? []).slice(0, 8).map((check) => (
-                <li key={check.id} className="border-t border-line-soft first:border-t-0">
-                  <a
-                    href={`/reviews/${check.id}`}
-                    className="-mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors hover:bg-page"
-                  >
-                    <span className="truncate font-medium">
-                      {check.asset_name ?? check.label ?? check.input_type}
-                    </span>
-                    <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-brand-tint px-2.5 text-xs font-semibold text-brand">
-                      {check.score === null ? check.status : check.score}
-                    </span>
-                  </a>
-                </li>
-              ))}
-              {(history.data ?? []).length === 0 ? (
-                <li className="py-3 text-xs text-ink-muted">Nothing reviewed yet.</li>
-              ) : null}
-            </ul>
-          </section>
         </aside>
       </div>
     </>

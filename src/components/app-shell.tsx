@@ -9,6 +9,7 @@ import {
   Menu,
   Settings,
   Upload,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
