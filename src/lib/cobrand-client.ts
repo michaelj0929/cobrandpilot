@@ -300,3 +300,26 @@ export async function getBrandFamilyOf(brandId: string) {
   if (!brand?.workspace_id) return { master: null, subBrands: [] as Brand[] };
   return getBrandFamily(brand.workspace_id);
 }
+
+export const CREATIVE_TYPES = [
+  "Paid social", "Organic social", "Display", "Email", "Web", "Landing page",
+  "Presentation", "Sales collateral", "Event", "OOH", "Packaging", "Other",
+];
+export const OBJECTIVES = [
+  "Awareness", "Consideration", "Acquisition", "Conversion", "Retention", "Education", "Announcement",
+];
+export const AUDIENCES = [
+  "Existing customers", "New prospects", "Gen Z", "Millennials", "Parents", "Professionals",
+  "B2B decision makers", "Employees", "Partners", "Investors",
+];
+
+/** Review projects for a brand, newest first, with their creative checks. */
+export async function listReviewProjects(brandId: string) {
+  const { data, error } = await supabase
+    .from("review_projects")
+    .select("*, validation_checks(id, asset_name, input_type, label, score, status, created_at)")
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
