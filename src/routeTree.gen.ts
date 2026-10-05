@@ -20,6 +20,7 @@ import { Route as AuthenticatedWorkspacesWorkspaceIdRouteImport } from './routes
 import { Route as AuthenticatedBrandsBrandIdIndexRouteImport } from './routes/_authenticated/brands.$brandId.index'
 import { Route as AuthenticatedBrandsBrandIdBrainRouteImport } from './routes/_authenticated/brands.$brandId.brain'
 import { Route as AuthenticatedBrandsBrandIdReviewRouteImport } from './routes/_authenticated/brands.$brandId.review'
+import { Route as AuthenticatedBrandsBrandIdReviewsRouteImport } from './routes/_authenticated/brands.$brandId.reviews'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +83,12 @@ const AuthenticatedBrandsBrandIdReviewRoute =
     path: '/review',
     getParentRoute: () => AuthenticatedBrandsBrandIdRoute,
   } as any)
+const AuthenticatedBrandsBrandIdReviewsRoute =
+  AuthenticatedBrandsBrandIdReviewsRouteImport.update({
+    id: '/reviews',
+    path: '/reviews',
+    getParentRoute: () => AuthenticatedBrandsBrandIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
   '/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
+  '/brands/$brandId/reviews': typeof AuthenticatedBrandsBrandIdReviewsRoute
   '/brands/$brandId/': typeof AuthenticatedBrandsBrandIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -104,6 +112,7 @@ export interface FileRoutesByTo {
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
   '/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
   '/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
+  '/brands/$brandId/reviews': typeof AuthenticatedBrandsBrandIdReviewsRoute
   '/brands/$brandId': typeof AuthenticatedBrandsBrandIdIndexRoute
 }
 export interface FileRoutesById {
@@ -118,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/_authenticated/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
   '/_authenticated/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
+  '/_authenticated/brands/$brandId/reviews': typeof AuthenticatedBrandsBrandIdReviewsRoute
   '/_authenticated/brands/$brandId/': typeof AuthenticatedBrandsBrandIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/workspaces/'
     | '/brands/$brandId/brain'
     | '/brands/$brandId/review'
+    | '/brands/$brandId/reviews'
     | '/brands/$brandId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/workspaces'
     | '/brands/$brandId/brain'
     | '/brands/$brandId/review'
+    | '/brands/$brandId/reviews'
     | '/brands/$brandId'
   id:
     | '__root__'
@@ -156,6 +168,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/'
     | '/_authenticated/brands/$brandId/brain'
     | '/_authenticated/brands/$brandId/review'
+    | '/_authenticated/brands/$brandId/reviews'
     | '/_authenticated/brands/$brandId/'
   fileRoutesById: FileRoutesById
 }
@@ -244,12 +257,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrandsBrandIdReviewRouteImport
       parentRoute: typeof AuthenticatedBrandsBrandIdRoute
     }
+    '/_authenticated/brands/$brandId/reviews': {
+      id: '/_authenticated/brands/$brandId/reviews'
+      path: '/reviews'
+      fullPath: '/brands/$brandId/reviews'
+      preLoaderRoute: typeof AuthenticatedBrandsBrandIdReviewsRouteImport
+      parentRoute: typeof AuthenticatedBrandsBrandIdRoute
+    }
   }
 }
 
 interface AuthenticatedBrandsBrandIdRouteChildren {
   AuthenticatedBrandsBrandIdBrainRoute: typeof AuthenticatedBrandsBrandIdBrainRoute
   AuthenticatedBrandsBrandIdReviewRoute: typeof AuthenticatedBrandsBrandIdReviewRoute
+  AuthenticatedBrandsBrandIdReviewsRoute: typeof AuthenticatedBrandsBrandIdReviewsRoute
   AuthenticatedBrandsBrandIdIndexRoute: typeof AuthenticatedBrandsBrandIdIndexRoute
 }
 
@@ -258,6 +279,8 @@ const AuthenticatedBrandsBrandIdRouteChildren: AuthenticatedBrandsBrandIdRouteCh
     AuthenticatedBrandsBrandIdBrainRoute: AuthenticatedBrandsBrandIdBrainRoute,
     AuthenticatedBrandsBrandIdReviewRoute:
       AuthenticatedBrandsBrandIdReviewRoute,
+    AuthenticatedBrandsBrandIdReviewsRoute:
+      AuthenticatedBrandsBrandIdReviewsRoute,
     AuthenticatedBrandsBrandIdIndexRoute: AuthenticatedBrandsBrandIdIndexRoute,
   }
 

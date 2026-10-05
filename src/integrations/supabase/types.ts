@@ -262,6 +262,50 @@ export type Database = {
           },
         ]
       }
+      review_projects: {
+        Row: {
+          audience: string
+          brand_id: string
+          created_at: string
+          creating: string
+          deadline: string | null
+          id: string
+          objective: string
+          review_date: string
+          title: string
+        }
+        Insert: {
+          audience: string
+          brand_id: string
+          created_at?: string
+          creating: string
+          deadline?: string | null
+          id?: string
+          objective: string
+          review_date?: string
+          title: string
+        }
+        Update: {
+          audience?: string
+          brand_id?: string
+          created_at?: string
+          creating?: string
+          deadline?: string | null
+          id?: string
+          objective?: string
+          review_date?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_projects_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rule_examples: {
         Row: {
           brand_id: string
@@ -520,6 +564,7 @@ export type Database = {
           id: string
           input_type: string
           label: string | null
+          project_id: string | null
           readiness: Json | null
           score: number | null
           status: string
@@ -543,6 +588,7 @@ export type Database = {
           id?: string
           input_type?: string
           label?: string | null
+          project_id?: string | null
           readiness?: Json | null
           score?: number | null
           status?: string
@@ -566,6 +612,7 @@ export type Database = {
           id?: string
           input_type?: string
           label?: string | null
+          project_id?: string | null
           readiness?: Json | null
           score?: number | null
           status?: string
@@ -579,6 +626,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_checks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "review_projects"
             referencedColumns: ["id"]
           },
         ]

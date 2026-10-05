@@ -9,6 +9,7 @@ import {
   Menu,
   Settings,
   Upload,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -67,8 +68,9 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
     settings: pathname.startsWith("/settings"),
     uploads: brandBase !== null && pathname === brandBase,
     system: brandBase !== null && pathname.startsWith(`${brandBase}/brain`),
-    checks:
-      (masterId !== null && pathname.startsWith(`/brands/${masterId}/review`)) ||
+    checks: masterId !== null && pathname === `/brands/${masterId}/review`,
+    past:
+      (masterId !== null && pathname.startsWith(`/brands/${masterId}/reviews`)) ||
       pathname.startsWith("/reviews/"),
   };
 
@@ -161,23 +163,31 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
           to="/brands/$brandId/review"
           params={{ brandId: masterId }}
           search={brand?.master ? { with: brand.id } : {}}
-          title="Checks"
-          aria-label="Checks"
+          title="Check new creative"
+          aria-label="Check new creative"
           className={itemClass(isOn.checks)}
         >
           <NavIcon icon={CircleCheck} />
-          <span className={labelClass}>Checks</span>
+          <span className={labelClass}>Check new creative</span>
         </Link>
       ) : (
         <BrandNavLink
           brandId={undefined}
           to="/brands/$brandId/review"
           icon={CircleCheck}
-          label="Checks"
+          label="Check new creative"
           active={false}
           collapsed={collapsed}
         />
       )}
+      <BrandNavLink
+        brandId={masterId ?? undefined}
+        to="/brands/$brandId/reviews"
+        icon={History}
+        label="Past reviews"
+        active={isOn.past}
+        collapsed={collapsed}
+      />
       <SoonItem icon={Activity} label="Activity" collapsed={collapsed} /></> : null}
 
       <div className="hidden min-h-6 flex-1 md:block" />
@@ -227,7 +237,7 @@ function BrandNavLink({
   collapsed,
 }: {
   brandId: string | undefined;
-  to: "/brands/$brandId" | "/brands/$brandId/brain" | "/brands/$brandId/review";
+  to: "/brands/$brandId" | "/brands/$brandId/brain" | "/brands/$brandId/review" | "/brands/$brandId/reviews";
   icon: LucideIcon;
   label: string;
   active: boolean;
