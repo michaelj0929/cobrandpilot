@@ -30,11 +30,12 @@ export function layerOfCategory(category: string): Layer {
   return "execution";
 }
 
-/** "logo_clearspace" → "LOGO", "primary_colors" → "COLOR". */
+/** "logo_clearspace" → "LOGO", "primary_colors" → "COLOR", "cta_patterns" → "CTA". */
 export function categoryPrefix(category: string) {
-  const head = (category.split("_").find((p) => !["primary", "secondary", "audience", "value", "type", "visual", "graphic", "filter", "copy", "cta", "proof", "reasons"].includes(p)) ?? category.split("_")[0] ?? "RULE");
-  const map: Record<string, string> = { colors: "COLOR", color: "COLOR", audiences: "AUDIENCE", values: "VALUE" };
-  return (map[head] ?? head.replace(/[^a-z]/gi, "").replace(/s$/, "")).toUpperCase().slice(0, 10) || "RULE";
+  if (/colou?r/.test(category)) return "COLOR";
+  const head = category.split("_")[0] ?? "rule";
+  const map: Record<string, string> = { audiences: "AUDIENCE", values: "VALUE", proof: "PROOF", reasons: "RTB" };
+  return (map[head] ?? head).replace(/[^a-z]/gi, "").toUpperCase().slice(0, 10) || "RULE";
 }
 
 export function categoryLabel(category: string) {
