@@ -287,14 +287,18 @@ export function PageHead({
   title,
   description,
   actions,
+  actionsAlign = "end",
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
+  actionsAlign?: "start" | "end";
 }) {
   return (
-    <div className="mb-7 flex flex-wrap items-end justify-between gap-5">
+    <div
+      className={`mb-7 flex flex-wrap justify-between gap-5 ${actionsAlign === "start" ? "items-start" : "items-end"}`}
+    >
       <div className="flex max-w-[600px] flex-col gap-2.5">
         {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1>{title}</h1>

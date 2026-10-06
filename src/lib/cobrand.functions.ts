@@ -451,12 +451,14 @@ export const proposeForCategory = createServerFn({ method: "POST" })
 export const draftEdits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ brandId: z.string(), request: z.string().min(2) }).parse(input),
+    z
+      .object({ brandId: z.string(), request: z.string().min(2), ruleId: z.string().optional() })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAccess(context.supabase, "brands", data.brandId);
     const rules = await loadRuleLines(data.brandId);
-    return proposeEdits({ request: data.request, rules });
+    return proposeEdits({ request: data.request, rules, focusRuleId: data.ruleId ?? null });
   });
 
 const changeSchema = z.object({
