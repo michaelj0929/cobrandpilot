@@ -323,6 +323,64 @@ function ReviewIntake() {
           </section>
 
           <section className="surface px-6 py-[22px]">
+            <h2>Guidelines to check against</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              The master brand system is always included. Add any sub-brand or product line this
+              creative belongs to.
+            </p>
+            <ul className="mt-4 flex flex-col gap-3">
+              <li className="flex items-center gap-3">
+                <Checkbox id="guide-master" checked disabled aria-describedby="guide-master-note" />
+                <Label htmlFor="guide-master" className="text-sm">
+                  {family.data?.master?.name ?? "Master brand"}
+                </Label>
+                <span id="guide-master-note" className="text-xs text-ink-muted">
+                  master brand · always included
+                </span>
+              </li>
+              {subBrands.map((sub) => (
+                <li key={sub.id} className="flex items-center gap-3">
+                  <Checkbox
+                    id={`guide-${sub.id}`}
+                    checked={selectedSubs.includes(sub.id)}
+                    disabled={!!busy}
+                    onCheckedChange={(v) => toggleSub(sub.id, v === true)}
+                  />
+                  <Label htmlFor={`guide-${sub.id}`} className="cursor-pointer text-sm">
+                    {sub.name}
+                  </Label>
+                  <span className="text-xs text-ink-muted lowercase">
+                    {BRAND_KIND_LABEL[sub.kind]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {family.isSuccess && subBrands.length === 0 ? (
+              <p className="mt-3 text-xs text-ink-muted">
+                No sub-brands or product lines yet. Add them from Home to check against their
+                guidelines too.
+              </p>
+            ) : null}
+          </section>
+
+          <div className="flex flex-wrap gap-3">
+            <Button disabled={!hasInput || !!busy} onClick={() => submit.mutate()}>
+              {busy ? busy : "Review Creative"}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!hasInput || !!busy}
+              onClick={() => assess.mutate()}
+            >
+              Check readiness first
+            </Button>
+          </div>
+          {busy && !running ? <BusyLine text={busy} /> : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+
+        <aside className="flex flex-col gap-5">
+          <section className="surface px-6 py-[22px]">
             <h2>Upload Files</h2>
             <p className="mt-1 text-sm text-ink-muted">
               Add a creative brief, copy, creative files, or any combination of the three.
@@ -436,64 +494,6 @@ function ReviewIntake() {
             </div>
           </section>
 
-          <section className="surface px-6 py-[22px]">
-            <h2>Guidelines to check against</h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              The master brand system is always included. Add any sub-brand or product line this
-              creative belongs to.
-            </p>
-            <ul className="mt-4 flex flex-col gap-3">
-              <li className="flex items-center gap-3">
-                <Checkbox id="guide-master" checked disabled aria-describedby="guide-master-note" />
-                <Label htmlFor="guide-master" className="text-sm">
-                  {family.data?.master?.name ?? "Master brand"}
-                </Label>
-                <span id="guide-master-note" className="text-xs text-ink-muted">
-                  master brand · always included
-                </span>
-              </li>
-              {subBrands.map((sub) => (
-                <li key={sub.id} className="flex items-center gap-3">
-                  <Checkbox
-                    id={`guide-${sub.id}`}
-                    checked={selectedSubs.includes(sub.id)}
-                    disabled={!!busy}
-                    onCheckedChange={(v) => toggleSub(sub.id, v === true)}
-                  />
-                  <Label htmlFor={`guide-${sub.id}`} className="cursor-pointer text-sm">
-                    {sub.name}
-                  </Label>
-                  <span className="text-xs text-ink-muted lowercase">
-                    {BRAND_KIND_LABEL[sub.kind]}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {family.isSuccess && subBrands.length === 0 ? (
-              <p className="mt-3 text-xs text-ink-muted">
-                No sub-brands or product lines yet. Add them from Home to check against their
-                guidelines too.
-              </p>
-            ) : null}
-          </section>
-
-          <div className="flex flex-wrap gap-3">
-            <Button disabled={!hasInput || !!busy} onClick={() => submit.mutate()}>
-              {busy ? busy : "Review Creative"}
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={!hasInput || !!busy}
-              onClick={() => assess.mutate()}
-            >
-              Check readiness first
-            </Button>
-          </div>
-          {busy && !running ? <BusyLine text={busy} /> : null}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
-
-        <aside className="flex flex-col gap-5">
           {running ? (
             <LoadingPanel title={busy ?? "Getting started…"}>
               <StepList steps={runSteps} />
@@ -531,11 +531,6 @@ function ReviewIntake() {
                 </div>
               ) : null}
             </section>
-          ) : !running ? (
-            <div className="rounded-lg bg-sky-tint px-5 py-4 text-sm">
-              CoBrand can tell you what it is able to judge before it reviews anything — useful when
-              the brand model is still thin.
-            </div>
           ) : null}
 
         </aside>
