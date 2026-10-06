@@ -280,7 +280,7 @@ function ReviewIntake() {
         description="Submit a brief, copy or a visual asset and CoBrand reviews it against the brand model in context."
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_1fr]">
         <div className="flex flex-col gap-5">
           <section className="surface px-6 py-[22px]">
             <h2>Project Details</h2>
