@@ -53,7 +53,7 @@ function SettingsPage() {
       </section>
 
       <section className="surface px-6 py-[22px]">
-        <SectionHead title="Workspaces" description="Rename the master brands you own." />
+        <SectionHead title="Master Brands" description="Rename or delete the master brands you own." />
         <ul>
           {(workspaces.data ?? []).map((ws) => (
             <WorkspaceRow key={ws.id} id={ws.id} name={ws.name} />

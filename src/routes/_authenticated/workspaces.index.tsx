@@ -68,7 +68,7 @@ function WorkspacesPage() {
       {open ? (
         <section className="surface rise-enter mb-7 flex flex-wrap items-end gap-4 px-6 py-[22px]">
           <div className="grid min-w-[240px] flex-1 gap-1.5">
-            <Label htmlFor="ws-name">Workspace name</Label>
+            <Label htmlFor="ws-name">Master brand name</Label>
             <Input
               id="ws-name"
               placeholder="e.g. Acme"
@@ -105,7 +105,7 @@ function WorkspacesPage() {
                 params={{ workspaceId: ws.id }}
                 className="rise-enter surface group flex flex-col gap-3 px-6 py-[22px] transition-shadow hover:shadow-md"
               >
-                <p className="eyebrow">Workspace</p>
+                <p className="eyebrow">Master brand</p>
                 <h2 className="text-2xl leading-8">{ws.name}</h2>
                 <p className="text-sm text-ink-muted">
                   {master
