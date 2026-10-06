@@ -5,6 +5,7 @@ import { ArrowRight, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Empty, PageHead, StateBadge } from "@/components/app-shell";
+import { SetupGapsPanel } from "@/components/setup-gaps";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ import {
   listRules,
   BRAND_KIND_LABEL,
   getBrand,
+  getBrandFamilyOf,
   listVersions,
   ruleValue,
   type BrandRule,
@@ -73,6 +75,10 @@ function BrandBrain() {
     queryKey: ["brand", parentId],
     queryFn: () => getBrand(parentId ?? ""),
     enabled: parentId !== null,
+  });
+  const family = useQuery({
+    queryKey: ["family-of", brandId],
+    queryFn: () => getBrandFamilyOf(brandId),
   });
   const versions = useQuery({
     queryKey: ["versions", brandId],
@@ -173,9 +179,29 @@ function BrandBrain() {
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
         />
       )}
+      {(family.data?.master && family.data.subBrands.length > 0) ? (
+        <nav aria-label="Choose a brand" className="mb-6 flex flex-wrap items-center gap-1.5">
+          {[family.data.master, ...family.data.subBrands].map((b) => (
+            <Link
+              key={b.id}
+              to="/brands/$brandId/brain"
+              params={{ brandId: b.id }}
+              aria-current={b.id === brandId ? "page" : undefined}
+              className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-4 text-sm transition-colors ${
+                b.id === brandId
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-line-soft hover:bg-brand-tint/40"
+              }`}
+            >
+              {b.name}
+              <span className="text-[11px] opacity-70">{BRAND_KIND_LABEL[b.kind]}</span>
+            </Link>
+          ))}
+        </nav>
+      ) : null}
       <div className="mb-7 flex flex-wrap items-center gap-3">
         <Button asChild variant="secondary">
-          <Link to="/brands/$brandId/review" params={{ brandId }}>
+          <Link to="/brands/$brandId/review" params={{ brandId: family.data?.master?.id ?? brandId }}>
             <ArrowRight aria-hidden />
             Creative Review
           </Link>
@@ -187,6 +213,13 @@ function BrandBrain() {
           </Link>
         </Button>
       </div>
+
+      {!parentId && brand.data ? (
+        <div className="mb-10">
+          <SetupGapsPanel brandId={brandId} />
+        </div>
+      ) : null}
+
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
         <div className="flex min-w-0 flex-col gap-5">
