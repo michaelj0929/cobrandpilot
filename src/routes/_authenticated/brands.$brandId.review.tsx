@@ -281,7 +281,7 @@ function ReviewIntake() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           <section className="surface flex flex-1 flex-col px-6 py-[22px]">
             <h2>Project Details</h2>
             <p className="mt-1 text-sm text-ink-muted">
@@ -307,7 +307,7 @@ function ReviewIntake() {
                 <Label htmlFor="deadline">Deadline</Label>
                 <Input id="deadline" type="date" value={deadline} min={reviewDate} disabled={!!projectId} onChange={(e) => setDeadline(e.target.value)} />
               </div>
-              <div className="grid gap-1.5 sm:col-span-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="creating">What are you creating? *</Label>
                 <CreatableCombobox id="creating" value={creating} onValueChange={setCreating} options={CREATIVE_TYPES} placeholder="Select or type a format" searchPlaceholder="Search or add a format…" />
               </div>
@@ -379,7 +379,7 @@ function ReviewIntake() {
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
 
-        <aside className="flex flex-col gap-5">
+        <aside className="flex min-w-0 flex-col gap-5">
           <section className="surface flex flex-1 flex-col px-6 py-[22px]">
             <h2>Upload Files</h2>
             <p className="mt-1 text-sm text-ink-muted">
