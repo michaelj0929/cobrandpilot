@@ -54,13 +54,13 @@ const PRIMARY_MARKETS = [
 export const Route = createFileRoute("/_authenticated/workspaces/$workspaceId")({
   head: () => ({
     meta: [
-      { title: "Workspace — CoBrand" },
+      { title: "Master Brand — CoBrand" },
       {
         name: "description",
         content:
           "Build a living brand model from your guidelines, see what is confirmed, inferred or missing, and review creative in context.",
       },
-      { property: "og:title", content: "Workspace — CoBrand" },
+      { property: "og:title", content: "Master Brand — CoBrand" },
       {
         property: "og:description",
         content: "Build a living brand model and review creative against it, in context.",
@@ -214,7 +214,7 @@ function MasterBrandSetup({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="grid items-center gap-12 py-6 lg:grid-cols-[1fr_1fr]">
       <div className="flex flex-col gap-5">
-        <h1 className="display">This workspace is ready</h1>
+        <h1 className="display">This master brand is ready</h1>
         <p className="lede">
           Start with your master brand. Upload everything that defines it, and CoBrand organizes it
           into a living brand system that every check runs against. Sub-brands and product lines
@@ -224,7 +224,7 @@ function MasterBrandSetup({ workspaceId }: { workspaceId: string }) {
 
       <section className="surface px-6 py-[22px]">
         <h2>Set up your master brand</h2>
-        <p className="mt-1 text-sm text-ink-muted">A workspace has one master brand.</p>
+        <p className="mt-1 text-sm text-ink-muted">Set up your master brand first; sub-brands and product lines sit under it.</p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5 sm:col-span-2">
             <Label htmlFor="name">Brand name</Label>

@@ -8,16 +8,16 @@ import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { listWorkspaces, renameWorkspace } from "@/lib/cobrand-client";
+import { deleteWorkspace, listWorkspaces, renameWorkspace } from "@/lib/cobrand-client";
 import { displayName, useAuthUser } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "Settings — CoBrand" },
-      { name: "description", content: "Your CoBrand account and workspaces." },
+      { name: "description", content: "Your CoBrand account and master brands." },
       { property: "og:title", content: "Settings — CoBrand" },
-      { property: "og:description", content: "Your CoBrand account and workspaces." },
+      { property: "og:description", content: "Your CoBrand account and master brands." },
     ],
   }),
   component: SettingsPage,
@@ -38,7 +38,7 @@ function SettingsPage() {
 
   return (
     <AppShell>
-      <PageHead title="Settings" description="Your account and the workspaces you own." />
+      <PageHead title="Settings" description="Your account and the master brands you own." />
 
       <section className="surface mb-7 flex flex-wrap items-center gap-5 px-6 py-[22px]">
         <UserAvatar user={user} size={56} />
@@ -53,7 +53,7 @@ function SettingsPage() {
       </section>
 
       <section className="surface px-6 py-[22px]">
-        <SectionHead title="Workspaces" description="Rename the workspaces you own." />
+        <SectionHead title="Master Brands" description="Rename or delete the master brands you own." />
         <ul>
           {(workspaces.data ?? []).map((ws) => (
             <WorkspaceRow key={ws.id} id={ws.id} name={ws.name} />
@@ -67,13 +67,22 @@ function SettingsPage() {
 function WorkspaceRow({ id, name }: { id: string; name: string }) {
   const queryClient = useQueryClient();
   const [value, setValue] = useState(name);
+  const [confirming, setConfirming] = useState(false);
   const save = useMutation({
     mutationFn: () => renameWorkspace(id, value),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
   });
+  const remove = useMutation({
+    mutationFn: () => deleteWorkspace(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["brand-family"] });
+    },
+  });
   return (
     <li className="border-t border-line-soft py-3 first:border-t-0">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Input value={value} onChange={(e) => setValue(e.target.value)} className="max-w-sm" />
         <Button
           size="sm"
@@ -83,6 +92,21 @@ function WorkspaceRow({ id, name }: { id: string; name: string }) {
         >
           {save.isSuccess && value === name ? "Saved" : "Save"}
         </Button>
+        {confirming ? (
+          <>
+            <span className="text-xs text-ink-muted">Deletes all its sub-brands, rules and reviews.</span>
+            <Button size="sm" variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate()}>
+              Confirm delete
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+              Cancel
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={() => setConfirming(true)}>
+            Delete
+          </Button>
+        )}
       </div>
     </li>
   );

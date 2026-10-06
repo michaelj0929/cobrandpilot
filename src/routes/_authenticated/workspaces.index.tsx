@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/workspaces/")({
       { title: "Brand Hub — CoBrand" },
       { name: "description", content: "Choose a brand. Each brand has one master brand system." },
       { property: "og:title", content: "Brand Hub — CoBrand" },
-      { property: "og:description", content: "Each CoBrand workspace holds one master brand." },
+      { property: "og:description", content: "Each master brand holds its sub-brands and product lines." },
     ],
   }),
   component: WorkspacesPage,
@@ -56,7 +56,7 @@ function WorkspacesPage() {
       <PageHead
         {...(user ? { eyebrow: `Hi, ${displayName(user).split(" ")[0]}` } : {})}
         title="Brand Hub"
-        description="Each workspace holds one master brand, plus its sub-brands and product lines."
+        description="Each master brand holds its own sub-brands and product lines."
         actions={
           <Button onClick={() => setOpen((v) => !v)}>
             <Plus aria-hidden />
@@ -68,7 +68,7 @@ function WorkspacesPage() {
       {open ? (
         <section className="surface rise-enter mb-7 flex flex-wrap items-end gap-4 px-6 py-[22px]">
           <div className="grid min-w-[240px] flex-1 gap-1.5">
-            <Label htmlFor="ws-name">Workspace name</Label>
+            <Label htmlFor="ws-name">Master brand name</Label>
             <Input
               id="ws-name"
               placeholder="e.g. Acme"
@@ -89,8 +89,8 @@ function WorkspacesPage() {
         <p className="text-sm text-ink-muted">Loading…</p>
       ) : list.length === 0 ? (
         <Empty
-          title="No workspaces yet"
-          body="Create your first workspace, then set up its master brand."
+          title="No master brands yet"
+          body="Create your first master brand to get started."
         />
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
@@ -105,7 +105,7 @@ function WorkspacesPage() {
                 params={{ workspaceId: ws.id }}
                 className="rise-enter surface group flex flex-col gap-3 px-6 py-[22px] transition-shadow hover:shadow-md"
               >
-                <p className="eyebrow">Workspace</p>
+                <p className="eyebrow">Master brand</p>
                 <h2 className="text-2xl leading-8">{ws.name}</h2>
                 <p className="text-sm text-ink-muted">
                   {master
