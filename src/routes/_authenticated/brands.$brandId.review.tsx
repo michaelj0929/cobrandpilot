@@ -456,6 +456,7 @@ function ReviewIntake() {
               <Textarea
                 id="copy"
                 rows={4}
+                className="flex-1"
                 placeholder="Optional: paste a headline, body copy, CTA, or notes…"
                 value={copy}
                 onChange={(e) => setCopy(e.target.value)}
