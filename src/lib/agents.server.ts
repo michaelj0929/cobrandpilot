@@ -256,15 +256,22 @@ const editSchema = z.object({
 
 export type ProposedEdits = z.infer<typeof editSchema>;
 
-export function proposeEdits(input: { request: string; rules: string }) {
+export function proposeEdits(input: { request: string; rules: string; focusRuleId?: string | null }) {
   return runAgent({
     schema: editSchema,
     effort: "medium",
     system: `${SHARED_RULES}
-You turn a plain-language edit request into a precise, field-level diff against the brand model. Never apply anything — you only propose.
+You are a senior brand strategist and guidelines editor. The user describes, in their own words, how a brand rule should change. Treat the request as intent and direction, not as literal replacement text.
+How to work:
+- Work out what the user is really trying to achieve, then rewrite the rule so it achieves that while staying consistent with the rest of the brand model (voice, terminology, related rules, severity conventions).
+- Write the result the way a professional brand guideline is written: precise, actionable, testable by a reviewer, in the brand's own vocabulary. Never paste the user's phrasing in verbatim unless it is already guideline-quality.
+- You may adjust more than one field (statement, value, severity, label) when that is what the ask implies, and you may touch closely related rules if leaving them would create a contradiction. Keep changes focused; do not rewrite unrelated rules.
+- If the ask conflicts with a confirmed Must rule or the brand foundations, propose the closest version that respects the brand and explain the tension in "understood".
+- "understood" briefly explains, in plain language, what you changed and why it fits the brand.
+Never apply anything — you only propose.
 Use action "update" with the exact rule_id from the list for an existing rule, "add" for something new (rule_id null), "archive" to retire a rule.
-For "update" the field is one of: statement, value, severity, label. If the request is ambiguous, still propose your best reading and put the clarification in "question".`,
-    prompt: `Edit request: ${input.request}\n\nCurrent brand model (id | layer | type | label | statement | value | severity):\n${input.rules}`,
+For "update" the field is one of: statement, value, severity, label — emit one change per field. If the request is ambiguous, still propose your best reading and put the clarification in "question".`,
+    prompt: `${input.focusRuleId ? `The user is editing the rule with id ${input.focusRuleId}. Focus on it.\n\n` : ""}Edit request: ${input.request}\n\nCurrent brand model:\n${input.rules}`,
     fallback: { understood: "Could not interpret that request.", changes: [], question: null },
   });
 }

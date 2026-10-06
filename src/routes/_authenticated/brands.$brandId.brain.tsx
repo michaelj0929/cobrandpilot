@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ClipboardCheck, TriangleAlert, Upload } from "lucide-react";
+import { ClipboardCheck, Sparkles, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Empty, PageHead, StateBadge } from "@/components/app-shell";
@@ -64,10 +64,6 @@ function BrandBrain() {
   const [layer, setLayer] = useState<(typeof LAYERS)[number]>("intent");
   const [filter, setFilter] = useState("all");
   const [openRule, setOpenRule] = useState<string | null>(null);
-  const [request, setRequest] = useState("");
-  const [diff, setDiff] = useState<ProposedEdits | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const rules = useQuery({ queryKey: ["rules", brandId], queryFn: () => listRules(brandId) });
   const gaps = useQuery({ queryKey: ["gaps", brandId], queryFn: () => listGaps(brandId) });
@@ -87,8 +83,6 @@ function BrandBrain() {
     queryFn: () => listVersions(brandId),
   });
 
-  const draft = useServerFn(draftEdits);
-  const apply = useServerFn(applyEdits);
   const save = useServerFn(saveRule);
   const confirm = useServerFn(confirmRule);
 
@@ -125,67 +119,11 @@ function BrandBrain() {
     };
   }, [rules.data]);
 
-  const askDraft = useMutation({
-    mutationFn: async () => {
-      setError(null);
-      setBusy(true);
-      const result = await draft({ data: { brandId, request } });
-      setDiff(result);
-    },
-    onSettled: () => setBusy(false),
-    onError: (e) => setError((e as Error).message),
-  });
-
-  const applyDiff = useMutation({
-    mutationFn: async () => {
-      if (!diff) return;
-      setBusy(true);
-      await apply({
-        data: {
-          brandId,
-          summary: diff.understood,
-          changes: diff.changes.map((c) => ({
-            action: c.action,
-            rule_id: c.rule_id,
-            label: c.label,
-            field: c.field,
-            old_value: c.old_value,
-            new_value: c.new_value,
-            layer: c.layer,
-            rule_type: c.rule_type,
-            severity: c.severity,
-          })),
-        },
-      });
-      setDiff(null);
-      setRequest("");
-      refresh();
-    },
-    onSettled: () => setBusy(false),
-    onError: (e) => setError((e as Error).message),
-  });
-
   const confirmedPct = counts.total ? (counts.confirmed / counts.total) * 100 : 0;
 
-  return (
-    <>
-      {parentId ? (
-        <PageHead
-          {...(brand.data ? { eyebrow: BRAND_KIND_LABEL[brand.data.kind] } : {})}
-          title={`${brand.data?.name ?? ""} guidelines`}
-          description={`Rules that only apply to ${brand.data?.name ?? "this sub-brand"}. Checks that select it use these on top of the ${master.data?.name ?? "master brand"} brand system; ${master.data?.name ?? "master brand"} Must rules still win.`}
-        />
-      ) : (
-        <PageHead
-          eyebrow="Master brand"
-          title="Your brand system"
-          description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
-        />
-      )}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
-        <div className="flex flex-wrap items-center gap-4">
-          <section className="rounded-lg bg-brand-tint px-5 py-3.5">
+  const statusBlock = (
+    <div className="flex flex-col items-stretch gap-3 sm:items-end">
+      <section className="rounded-lg bg-brand-tint px-5 py-3.5">
             <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brand status</h2>
             <p className="mt-1 text-[13px] font-semibold text-brand">
               {counts.total} rules · {counts.confirmed} confirmed · {counts.review} awaiting review
@@ -215,10 +153,31 @@ function BrandBrain() {
               ) : null}
             </Link>
           </Button>
-        </div>
+    </div>
+  );
+
+  return (
+    <>
+      {parentId ? (
+        <PageHead
+          {...(brand.data ? { eyebrow: BRAND_KIND_LABEL[brand.data.kind] } : {})}
+          title={`${brand.data?.name ?? ""} guidelines`}
+          description={`Rules that only apply to ${brand.data?.name ?? "this sub-brand"}. Checks that select it use these on top of the ${master.data?.name ?? "master brand"} brand system; ${master.data?.name ?? "master brand"} Must rules still win.`}
+          actions={statusBlock}
+          actionsAlign="start"
+        />
+      ) : (
+        <PageHead
+          eyebrow="Master brand"
+          title="Your brand system"
+          description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
+          actions={statusBlock}
+          actionsAlign="start"
+        />
+      )}
+      <div className="mb-6">
+        <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
       </div>
-
-
 
       <div role="tablist" aria-label="Brand layers" className="mb-2 flex flex-wrap items-center gap-2">
         {LAYERS.map((l) => {
@@ -243,7 +202,7 @@ function BrandBrain() {
       </div>
       <p className="mb-7 text-sm text-ink-muted">{LAYER_QUESTION[layer]}</p>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-6">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="max-w-xl text-sm text-ink-muted">{LAYER_BLURB[layer]}</p>
@@ -329,6 +288,8 @@ function BrandBrain() {
                       <RuleCard
                         key={rule.id}
                         rule={rule}
+                        brandId={brandId}
+                        onApplied={refresh}
                         open={openRule === rule.id}
                         onToggle={() => setOpenRule(openRule === rule.id ? null : rule.id)}
                         onSave={async (values) => {
@@ -348,64 +309,6 @@ function BrandBrain() {
           </div>
         </div>
 
-        <aside className="flex flex-col gap-5 lg:sticky lg:top-8">
-
-          <section className="surface px-6 py-[22px]">
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">
-              Change it in plain language
-            </h2>
-            <Textarea
-              className="mt-3"
-              rows={3}
-              placeholder='e.g. "Our primary blue is #0B3D91, not #0A47A1"'
-              value={request}
-              onChange={(e) => setRequest(e.target.value)}
-            />
-            <Button
-              className="mt-3"
-              size="sm"
-              disabled={busy || request.trim().length < 5}
-              onClick={() => askDraft.mutate()}
-            >
-              {busy ? "Thinking…" : "Propose change"}
-            </Button>
-
-            {diff ? (
-              <div className="reveal-enter mt-5 border-t border-line-soft pt-5">
-                <p className="text-sm">{diff.understood}</p>
-                {diff.question ? (
-                  <p className="mt-2 text-xs text-ink-muted">{diff.question}</p>
-                ) : null}
-                <ul className="mt-4 space-y-2.5 text-sm">
-                  {diff.changes.map((change, i) => (
-                    <li key={i} className="rounded-md bg-page px-3.5 py-3">
-                      <p className="text-[11px] font-semibold text-ink-muted lowercase">
-                        {change.action} · {change.field}
-                      </p>
-                      <p className="mt-1 font-semibold">{change.label}</p>
-                      {change.old_value ? (
-                        <p className="text-xs text-ink-muted line-through">{change.old_value}</p>
-                      ) : null}
-                      <p className="text-xs">{change.new_value}</p>
-                    </li>
-                  ))}
-                </ul>
-                {diff.changes.length > 0 ? (
-                  <div className="mt-4 flex gap-2">
-                    <Button size="sm" disabled={busy} onClick={() => applyDiff.mutate()}>
-                      Apply changes
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setDiff(null)}>
-                      Discard
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-            {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
-          </section>
-
-        </aside>
       </div>
 
       <section className="surface mt-10 px-6 py-[22px]">
@@ -430,12 +333,16 @@ function BrandBrain() {
 }
 function RuleCard({
   rule,
+  brandId,
+  onApplied,
   open,
   onToggle,
   onSave,
   onConfirm,
 }: {
   rule: BrandRule;
+  brandId: string;
+  onApplied: () => void;
   open: boolean;
   onToggle: () => void;
   onSave: (values: {
@@ -453,6 +360,7 @@ function RuleCard({
   const [value, setValue] = useState(ruleValue(rule.value));
   const [severity, setSeverity] = useState(rule.severity);
   const [saving, setSaving] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const raw = ruleValue(rule.value);
 
@@ -538,7 +446,17 @@ function RuleCard({
             </div>
           ) : null}
 
-          {editing ? (
+          {aiOpen ? (
+            <AiEdit
+              rule={rule}
+              brandId={brandId}
+              onClose={() => setAiOpen(false)}
+              onApplied={() => {
+                setAiOpen(false);
+                onApplied();
+              }}
+            />
+          ) : editing ? (
             <div className="mt-4 grid gap-3">
               <div className="grid gap-1.5">
                 <Label>Name</Label>
@@ -594,6 +512,10 @@ function RuleCard({
               <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
                 Edit
               </Button>
+              <Button size="sm" variant="secondary" onClick={() => setAiOpen(true)}>
+                <Sparkles aria-hidden />
+                Edit with CoBrand
+              </Button>
               {rule.status !== "confirmed" ? (
                 <Button
                   size="sm"
@@ -620,6 +542,126 @@ function Detail({ label, value }: { label: string; value: string }) {
     <div>
       <dt className="eyebrow">{label}</dt>
       <dd className="mt-0.5 text-sm">{value}</dd>
+    </div>
+  );
+}
+
+function AiEdit({
+  rule,
+  brandId,
+  onClose,
+  onApplied,
+}: {
+  rule: BrandRule;
+  brandId: string;
+  onClose: () => void;
+  onApplied: () => void;
+}) {
+  const draft = useServerFn(draftEdits);
+  const apply = useServerFn(applyEdits);
+  const [request, setRequest] = useState("");
+  const [diff, setDiff] = useState<ProposedEdits | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async (fn: () => Promise<void>) => {
+    setError(null);
+    setBusy(true);
+    try {
+      await fn();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="reveal-enter mt-4 rounded-md bg-card px-4 py-4">
+      <p className="text-[13px] font-semibold">Edit with CoBrand</p>
+      <p className="mt-0.5 text-xs text-ink-muted">
+        Describe what should change. CoBrand will shape the rule to fit your ask and the rest of the brand.
+      </p>
+      <Textarea
+        className="mt-3"
+        rows={3}
+        placeholder='e.g. "Make this feel less strict for social posts"'
+        value={request}
+        onChange={(e) => setRequest(e.target.value)}
+      />
+      <div className="mt-3 flex gap-2">
+        <Button
+          size="sm"
+          disabled={busy || request.trim().length < 3}
+          onClick={() =>
+            run(async () => {
+              setDiff(await draft({ data: { brandId, request, ruleId: rule.id } }));
+            })
+          }
+        >
+          {busy && !diff ? "Thinking…" : "Suggest changes"}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+
+      {diff ? (
+        <div className="reveal-enter mt-5 border-t border-line-soft pt-5">
+          <p className="text-sm">{diff.understood}</p>
+          {diff.question ? <p className="mt-2 text-xs text-ink-muted">{diff.question}</p> : null}
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {diff.changes.map((change, i) => (
+              <li key={i} className="rounded-md bg-page px-3.5 py-3">
+                <p className="text-[11px] font-semibold text-ink-muted lowercase">
+                  {change.action} · {change.field}
+                </p>
+                <p className="mt-1 font-semibold">{change.label}</p>
+                {change.old_value ? (
+                  <p className="text-xs text-ink-muted line-through">{change.old_value}</p>
+                ) : null}
+                <p className="text-xs">{change.new_value}</p>
+              </li>
+            ))}
+          </ul>
+          {diff.changes.length > 0 ? (
+            <div className="mt-4 flex gap-2">
+              <Button
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    await apply({
+                      data: {
+                        brandId,
+                        summary: diff.understood,
+                        changes: diff.changes.map((c) => ({
+                          action: c.action,
+                          rule_id: c.rule_id,
+                          label: c.label,
+                          field: c.field,
+                          old_value: c.old_value,
+                          new_value: c.new_value,
+                          layer: c.layer,
+                          rule_type: c.rule_type,
+                          severity: c.severity,
+                        })),
+                      },
+                    });
+                    onApplied();
+                  })
+                }
+              >
+                Apply changes
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setDiff(null)}>
+                Discard
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }
