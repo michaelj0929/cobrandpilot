@@ -31,13 +31,13 @@ export const Route = createFileRoute("/_authenticated/brands/$brandId/review")({
     typeof search["with"] === "string" ? { with: search["with"] } : {},
   head: () => ({
     meta: [
-      { title: "Review creative — CoBrand" },
+      { title: "Creative Review — CoBrand" },
       {
         name: "description",
         content:
           "Submit a brief, copy or a visual asset and CoBrand reviews it against the brand model in context.",
       },
-      { property: "og:title", content: "Review creative — CoBrand" },
+      { property: "og:title", content: "Creative Review — CoBrand" },
       {
         property: "og:description",
         content: "Submit a brief, copy or an asset and review it against the brand model.",
