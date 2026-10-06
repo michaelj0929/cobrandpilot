@@ -41,6 +41,9 @@ export const Route = createFileRoute("/_authenticated/brands/$brandId/")({
   component: SourcesAndGaps,
 });
 
+type SourceRow = Awaited<ReturnType<typeof listSources>>[number];
+
+
 const CLASSIFICATIONS = [
   "Master Brand Guideline",
   "Messaging/Strategy",
@@ -266,6 +269,17 @@ function SourcesAndGaps() {
               className="hidden"
               onChange={(e) => {
                 if (e.target.files?.length) upload.mutate(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <input
+              ref={replaceInput}
+              type="file"
+              accept={ACCEPTED_TYPES}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) replaceSourceMutation.mutate(file);
                 e.target.value = "";
               }}
             />
