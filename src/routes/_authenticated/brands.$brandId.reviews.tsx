@@ -14,6 +14,8 @@ export const Route = createFileRoute("/_authenticated/brands/$brandId/reviews")(
       { name: "description", content: "Every creative review project, its dates and its assets." },
       { property: "og:title", content: "Past Reviews — CoBrand" },
       { property: "og:description", content: "Browse past creative review projects and scores." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PastReviews,
@@ -84,21 +86,25 @@ function PastReviews() {
                 {items.map((check) => {
                   const verdict = reviewVerdict(check.score);
                   return (
-                  <li key={check.id} className="border-t border-line-soft">
-                    <Link
-                      to="/reviews/$checkId"
-                      params={{ checkId: check.id }}
-                      className="-mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors hover:bg-page"
-                    >
-                      <span className="truncate font-medium">
-                        {check.asset_name ?? check.label ?? check.input_type}
-                      </span>
-                      <span className={`inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${verdict.className}`}>
-                        <span className={`size-1.5 rounded-full ${verdict.dotClassName}`} aria-hidden />
-                        {verdict.label}
-                      </span>
-                    </Link>
-                  </li>
+                    <li key={check.id} className="border-t border-line-soft">
+                      <Link
+                        to="/reviews/$checkId"
+                        params={{ checkId: check.id }}
+                        className="-mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors hover:bg-page"
+                      >
+                        <span className="truncate font-medium">
+                          {check.asset_name ?? check.label ?? check.input_type}
+                        </span>
+                        {check.score === null ? (
+                          <span className="text-xs font-semibold text-ink-muted">{check.status}</span>
+                        ) : (
+                          <span className={`inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${verdict.className}`}>
+                            <span className={`size-1.5 rounded-full ${verdict.dotClassName}`} aria-hidden />
+                            {verdict.label}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
                   );
                 })}
                 {items.length === 0 ? (
@@ -119,21 +125,25 @@ function PastReviews() {
               {loose.map((check) => {
                 const verdict = reviewVerdict(check.score);
                 return (
-                <li key={check.id} className="border-t border-line-soft">
-                  <Link
-                    to="/reviews/$checkId"
-                    params={{ checkId: check.id }}
-                    className="-mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors hover:bg-page"
-                  >
-                    <span className="truncate font-medium">
-                      {check.asset_name ?? check.label ?? check.input_type}
-                    </span>
-                    <span className={`inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${verdict.className}`}>
-                      <span className={`size-1.5 rounded-full ${verdict.dotClassName}`} aria-hidden />
-                      {verdict.label}
-                    </span>
-                  </Link>
-                </li>
+                  <li key={check.id} className="border-t border-line-soft">
+                    <Link
+                      to="/reviews/$checkId"
+                      params={{ checkId: check.id }}
+                      className="-mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors hover:bg-page"
+                    >
+                      <span className="truncate font-medium">
+                        {check.asset_name ?? check.label ?? check.input_type}
+                      </span>
+                      {check.score === null ? (
+                        <span className="text-xs font-semibold text-ink-muted">{check.status}</span>
+                      ) : (
+                        <span className={`inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${verdict.className}`}>
+                          <span className={`size-1.5 rounded-full ${verdict.dotClassName}`} aria-hidden />
+                          {verdict.label}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
                 );
               })}
             </ul>

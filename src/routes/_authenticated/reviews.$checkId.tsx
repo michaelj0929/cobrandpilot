@@ -24,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/reviews/$checkId")({
         property: "og:description",
         content: "Scores, findings, cited rules and concrete fixes for this creative.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ReviewResult,
@@ -79,11 +81,11 @@ function ReviewResult() {
     {
       label: "Brand Compliant",
       verdict: reviewVerdict(
-        averageScores(scores.recognition, scores.channel_fit, scores.campaign_fit),
+        averageScores(scores["recognition"], scores["channel_fit"], scores["campaign_fit"]),
       ),
     },
-    { label: "Copy", verdict: reviewVerdict(scores.messaging) },
-    { label: "Layout", verdict: reviewVerdict(scores.layout) },
+    { label: "Copy", verdict: reviewVerdict(scores["messaging"]) },
+    { label: "Layout", verdict: reviewVerdict(scores["layout"]) },
   ];
 
   return (
