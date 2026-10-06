@@ -48,7 +48,7 @@ async function loadCheck(checkId: string) {
   const { data: rules } = await supabase
     .from("rules")
     .select(
-      "id, brand_id, layer, rule_type, label, statement, value, severity, scope, time_scope, status, source_citation, context_tags(channel, format, audience, market, funnel_stage, objective, product, campaign)",
+      "id, brand_id, rule_code, category, layer, rule_type, label, statement, value, severity, scope, scope_tags, time_scope, authority, source_document, source_page, confidence_score, status, source_citation, context_tags(channel, format, audience, market, funnel_stage, objective, product, campaign)",
     )
     .in("brand_id", brandIds)
     .not("status", "in", "(archived,superseded)");
@@ -76,24 +76,40 @@ function guidelineSetName(
     .join(" + ")}`;
 }
 
+/** Rules as structured records — exactly what the reviewer checks against. */
 function ruleLines(rules: LoadedRule[]) {
-  return rules
-    .map((r) => {
-      const value =
+  return JSON.stringify(
+    rules.map((r) => {
+      const raw =
         r.value && typeof r.value === "object" && "raw" in (r.value as Record<string, unknown>)
           ? String((r.value as Record<string, unknown>)["raw"] ?? "")
-          : "";
-      const tags = (r.context_tags ?? [])
-        .map((t) =>
-          Object.entries(t)
-            .filter(([, v]) => v)
-            .map(([k, v]) => `${k}=${String(v)}`)
-            .join(","),
-        )
-        .join(" | ");
-      return `${r.id} | ${r.origin} | ${r.layer} | ${r.rule_type} | ${r.label} | ${r.statement ?? ""} | ${value} | ${r.severity} | ${r.scope} | ${r.time_scope} | ${r.status} | ${tags}`;
-    })
-    .join("\n");
+          : null;
+      const context = Object.fromEntries(
+        (r.context_tags ?? []).flatMap((t) => Object.entries(t).filter(([, v]) => v)),
+      );
+      return {
+        id: r.id,
+        rule_code: r.rule_code,
+        origin: r.origin,
+        layer: r.layer,
+        category: r.category ?? r.rule_type,
+        label: r.label,
+        rule: r.statement,
+        value: raw || null,
+        severity: r.severity,
+        scope: r.scope_tags?.length ? r.scope_tags : [r.scope],
+        time: r.time_scope,
+        authority: r.authority,
+        source_document: r.source_document,
+        source_page: r.source_page,
+        confidence: r.confidence_score,
+        status: r.status,
+        ...(Object.keys(context).length ? { context } : {}),
+      };
+    }),
+    null,
+    1,
+  );
 }
 
 async function loadAsset(check: {
@@ -272,6 +288,7 @@ export const runReview = createServerFn({ method: "POST" })
               check_id: check.id,
               number: f.number || index + 1,
               rule_id: rule?.id ?? null,
+              rule_code: rule?.rule_code ?? null,
               title: f.title,
               pass_name: f.pass_name,
               dimension: f.dimension,

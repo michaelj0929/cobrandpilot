@@ -6,16 +6,24 @@ export const ACCEPTED_TYPES = ".pdf,.png,.jpg,.jpeg,.webp,.svg,.pptx,.docx,.txt,
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_FILES_PER_PASS = 10;
 
+export { LAYERS, LAYER_CATEGORIES, categoryLabel } from "./brand-layers";
+
 export const LAYER_LABEL: Record<string, string> = {
-  foundation: "Foundation",
-  identity: "Identity",
+  intent: "Intent",
+  recognition: "Recognition",
   execution: "Execution",
 };
 
+export const LAYER_QUESTION: Record<string, string> = {
+  intent: "What does the brand mean?",
+  recognition: "What makes it recognizable?",
+  execution: "How does the brand get made?",
+};
+
 export const LAYER_BLURB: Record<string, string> = {
-  foundation: "Who the brand is — purpose, positioning, audience, values and proof.",
-  identity: "How it shows up — logo, colour, type, voice and visual signatures.",
-  execution: "How it is applied — exact tokens, layout, imagery, copy patterns and examples.",
+  intent: "Purpose, promise, positioning, audiences and their needs, differentiators, values, value propositions, proof points and reasons to believe.",
+  recognition: "Logo and its variants, clear space and minimum size, colours and colour roles, typography and hierarchy, voice traits and visual signatures.",
+  execution: "Spacing, grid, layout, imagery, illustration, iconography, graphic devices, motion, CTA and copy patterns, claims and terminology.",
 };
 
 export function ruleValue(value: unknown): string {

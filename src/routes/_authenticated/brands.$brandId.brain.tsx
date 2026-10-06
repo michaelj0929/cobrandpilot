@@ -22,6 +22,9 @@ import { Swatch, TypeSpecimen, fontFamilyOf } from "@/components/visuals";
 import {
   LAYER_BLURB,
   LAYER_LABEL,
+  LAYER_QUESTION,
+  LAYERS,
+  categoryLabel,
   isColor,
   listGaps,
   listRules,
@@ -54,13 +57,12 @@ export const Route = createFileRoute("/_authenticated/brands/$brandId/brain")({
   component: BrandBrain,
 });
 
-const LAYERS = ["foundation", "identity", "execution"] as const;
 
 function BrandBrain() {
   const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/brain" });
   const queryClient = useQueryClient();
 
-  const [layer, setLayer] = useState<(typeof LAYERS)[number]>("foundation");
+  const [layer, setLayer] = useState<(typeof LAYERS)[number]>("intent");
   const [filter, setFilter] = useState("all");
   const [openRule, setOpenRule] = useState<string | null>(null);
   const [request, setRequest] = useState("");
@@ -108,7 +110,7 @@ function BrandBrain() {
   const grouped = useMemo(() => {
     const map = new Map<string, BrandRule[]>();
     for (const rule of layerRules) {
-      const key = rule.rule_type;
+      const key = rule.category ?? rule.rule_type;
       map.set(key, [...(map.get(key) ?? []), rule]);
     }
     return [...map.entries()];
@@ -180,32 +182,39 @@ function BrandBrain() {
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
         />
       )}
-      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing guidelines for" />
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
 
-      {!parentId && brand.data ? (
-        <div className="mb-10">
-          <SetupGapsPanel brandId={brandId} />
-        </div>
-      ) : null}
 
+
+      <div role="tablist" aria-label="Brand layers" className="mb-8 grid gap-3 sm:grid-cols-3">
+        {LAYERS.map((l) => {
+          const count = (rules.data ?? []).filter((r) => r.layer === l && r.status !== "archived").length;
+          return (
+            <button
+              key={l}
+              role="tab"
+              aria-selected={layer === l}
+              onClick={() => setLayer(l)}
+              className={`cursor-pointer rounded-lg border px-5 py-4 text-left transition-colors ${
+                layer === l
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-line-soft bg-card hover:bg-brand-tint/40"
+              }`}
+            >
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="text-base font-semibold">{LAYER_LABEL[l]}</span>
+                <span className="text-xs opacity-70">{count} rules</span>
+              </span>
+              <span className="mt-1 block text-[13px] opacity-75">{LAYER_QUESTION[l]}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
         <div className="flex min-w-0 flex-col gap-5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {LAYERS.map((l) => (
-              <button
-                key={l}
-                onClick={() => setLayer(l)}
-                aria-pressed={layer === l}
-                className={`min-h-10 cursor-pointer rounded-md px-4 text-sm transition-colors ${
-                  layer === l
-                    ? "bg-brand-tint font-semibold text-brand"
-                    : "font-medium text-ink-muted hover:bg-card hover:text-ink"
-                }`}
-              >
-                {LAYER_LABEL[l]}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="max-w-xl text-sm text-ink-muted">{LAYER_BLURB[layer]}</p>
             <div className="ml-auto w-44">
               <Select value={filter} onValueChange={setFilter}>
                 <SelectTrigger className="h-10">
@@ -219,7 +228,6 @@ function BrandBrain() {
               </Select>
             </div>
           </div>
-          <p className="max-w-xl text-sm text-ink-muted">{LAYER_BLURB[layer]}</p>
 
           {layerGaps.length > 0 ? (
             <div className="flex items-start gap-3 rounded-lg bg-yellow-tint px-4 py-3.5">
@@ -250,10 +258,10 @@ function BrandBrain() {
               grouped.map(([type, typeRules]) => (
                 <section key={type} className="surface px-6 py-[22px]">
                   <h2 className="text-[13px] leading-[18px] tracking-[0.2px] lowercase">
-                    {type.replace(/_/g, " ")}
+                    {categoryLabel(type)}
                   </h2>
 
-                  {type === "color" ? (
+                  {/colou?r/.test(type) ? (
                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
                       {typeRules
                         .filter((r) => isColor(ruleValue(r.value)))
@@ -268,7 +276,7 @@ function BrandBrain() {
                     </div>
                   ) : null}
 
-                  {type === "typography" ? (
+                  {type === "typography" || type === "type_hierarchy" ? (
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {typeRules.map((r) => {
                         const family = fontFamilyOf(r);
@@ -408,6 +416,11 @@ function BrandBrain() {
           </section>
         </aside>
       </div>
+      {!parentId && brand.data ? (
+        <div className="mt-12">
+          <SetupGapsPanel brandId={brandId} />
+        </div>
+      ) : null}
     </>
   );
 }
@@ -455,6 +468,9 @@ function RuleCard({
           className="min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand"
         >
           <div className="flex flex-wrap items-center gap-2">
+            {rule.rule_code ? (
+              <span className="font-mono text-[11px] text-ink-muted">{rule.rule_code}</span>
+            ) : null}
             <h3 className="text-sm leading-5">{rule.label}</h3>
             <StateBadge state={rule.status === "confirmed" ? "confirmed" : rule.review_state} />
             <span className="text-xs font-semibold text-ink-muted lowercase">{rule.severity}</span>
@@ -473,10 +489,23 @@ function RuleCard({
       {open ? (
         <div className="reveal-enter mt-4 rounded-md bg-page px-4 py-4 text-sm">
           <dl className="grid gap-4 sm:grid-cols-2">
-            <Detail label="Source" value={rule.source_citation ?? "—"} />
-            <Detail label="Applies to" value={`${rule.scope} · ${rule.time_scope}`} />
+            <Detail
+              label="Source"
+              value={
+                rule.source_document
+                  ? `${rule.source_document}${rule.source_page ? `, p.${rule.source_page}` : ""}`
+                  : (rule.source_citation ?? "—")
+              }
+            />
+            <Detail
+              label="Applies to"
+              value={`${(rule.scope_tags?.length ? rule.scope_tags : [rule.scope]).join(", ")} · ${rule.time_scope}`}
+            />
             <Detail label="Authority" value={rule.authority ?? "Not stated"} />
-            <Detail label="Confidence" value={rule.confidence ?? "—"} />
+            <Detail
+              label="Confidence"
+              value={rule.confidence_score != null ? `${Math.round(Number(rule.confidence_score) * 100)}%` : (rule.confidence ?? "—")}
+            />
           </dl>
           {rule.source_evidence ? (
             <p className="mt-4 rounded-md bg-card px-4 py-3 text-sm text-ink italic">

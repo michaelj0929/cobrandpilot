@@ -57,7 +57,7 @@ export function SetupGapsPanel({ brandId }: { brandId: string }) {
         data: {
           brandId,
           gapId: gap.id,
-          layer: gap.layer ?? "identity",
+          layer: gap.layer ?? "recognition",
           ruleType: "other",
           label: gap.topic,
           statement: answer.trim(),

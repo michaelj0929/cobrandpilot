@@ -216,13 +216,13 @@ function SourcesAndGaps() {
         }
       />
 
-      <BrandScopePicker brandId={brandId} to="/brands/$brandId" label="1. Choose what you're uploading to" />
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId" label="Uploading to" />
 
       <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_1fr]">
         <section className="flex flex-col gap-5">
           <div className="surface flex flex-col gap-5 px-6 py-[22px]">
             <div className="grid max-w-sm gap-1.5">
-              <Label>2. Choose the document type that best fits</Label>
+              <Label>Choose the document type that best fits</Label>
               <Select value={classification} onValueChange={setClassification}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a document type" />
