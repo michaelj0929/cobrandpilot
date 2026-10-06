@@ -332,6 +332,12 @@ export async function renameWorkspace(id: string, name: string) {
   if (error) throw error;
 }
 
+/** Deletes a workspace; its master brand, sub-brands and reviews cascade. */
+export async function deleteWorkspace(id: string) {
+  const { error } = await supabase.from("workspaces").delete().eq("id", id);
+  if (error) throw error;
+}
+
 /** The family (master + sub-brands) of the workspace a brand belongs to. */
 export async function getBrandFamilyOf(brandId: string) {
   const brand = await getBrand(brandId);
