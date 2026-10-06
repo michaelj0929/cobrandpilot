@@ -3,3 +3,4 @@
 - [x] Replace numeric review scores with verdict statuses across Past Reviews and review results.
 - [x] Reduce review dimensions to Brand Compliant, Copy, and Layout.
 - [x] Collapse review issues by default with expandable detail.
+- [x] Visual lift on the review summary: separate score cards, status pills, capitalised collapsible guideline citation.
