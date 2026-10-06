@@ -232,10 +232,106 @@ export function SubBrandsPanel({ master }: { master: Brand }) {
                   Guidelines
                 </Link>
               </Button>
+              <SubBrandActions sub={sub} masterId={master.id} />
             </li>
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * Remove and Replace for one sub-brand or product line. Replace deletes the
+ * brand and recreates it with the same name and type, then uploads the chosen
+ * guideline documents to its Uploads page.
+ */
+export function SubBrandActions({ sub, masterId }: { sub: Brand; masterId: string }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const replaceInput = useRef<HTMLInputElement>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["brand-family"] });
+    queryClient.invalidateQueries({ queryKey: ["brands"] });
+  };
+
+  const remove = useMutation({
+    mutationFn: () => deleteBrand(sub.id),
+    onSuccess: () => {
+      setConfirming(false);
+      refresh();
+    },
+    onError: (e) => setError((e as Error).message),
+  });
+
+  const replace = useMutation({
+    mutationFn: async (files: FileList) => {
+      const list = Array.from(files).slice(0, MAX_FILES_PER_PASS);
+      const tooBig = list.find((f) => f.size > MAX_FILE_BYTES);
+      if (tooBig) throw new Error(`${tooBig.name} is larger than 25 MB.`);
+      setBusy(true);
+      setError(null);
+      await deleteBrand(sub.id);
+      const id = await createBrand({
+        name: sub.name,
+        description: sub.description ?? undefined,
+        parentBrandId: masterId,
+        kind: sub.kind,
+      });
+      for (const file of list) {
+        await createSourceFromFile(id, file);
+      }
+      return id;
+    },
+    onSuccess: (id) => {
+      refresh();
+      navigate({ to: "/brands/$brandId", params: { brandId: id } });
+    },
+    onSettled: () => setBusy(false),
+    onError: (e) => setError((e as Error).message),
+  });
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        ref={replaceInput}
+        type="file"
+        multiple
+        accept={ACCEPTED_TYPES}
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.length) replace.mutate(e.target.files);
+          e.target.value = "";
+        }}
+      />
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={busy || remove.isPending}
+        onClick={() => replaceInput.current?.click()}
+      >
+        Replace
+      </Button>
+      {confirming ? (
+        <>
+          <Button size="sm" variant="destructive" disabled={busy} onClick={() => remove.mutate()}>
+            Confirm remove
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+            Cancel
+          </Button>
+        </>
+      ) : (
+        <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(true)}>
+          Remove
+        </Button>
+      )}
+      {busy ? <span className="text-xs text-ink-muted">Working…</span> : null}
+      {error ? <span className="text-xs text-destructive">{error}</span> : null}
+    </div>
   );
 }
