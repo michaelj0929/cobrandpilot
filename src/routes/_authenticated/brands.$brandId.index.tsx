@@ -174,15 +174,6 @@ function SourcesAndGaps() {
   });
 
 
-
-      setAnswering(null);
-      setAnswer("");
-      refresh();
-    },
-    onSettled: () => setBusy(null),
-    onError: (e) => setError((e as Error).message),
-  });
-
   const removeSource = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("source_files").delete().eq("id", id);
