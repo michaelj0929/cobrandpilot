@@ -280,9 +280,9 @@ function ReviewIntake() {
         description="Submit a brief, copy or a visual asset and CoBrand reviews it against the brand model in context."
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <div className="flex flex-col gap-5">
-          <section className="surface px-6 py-[22px]">
+          <section className="surface flex flex-1 flex-col px-6 py-[22px]">
             <h2>Project Details</h2>
             <p className="mt-1 text-sm text-ink-muted">
               Group every asset for one piece of work under a single review. All fields marked * are
@@ -363,7 +363,7 @@ function ReviewIntake() {
             ) : null}
           </section>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="mt-auto flex flex-wrap gap-3">
             <Button disabled={!hasInput || !!busy} onClick={() => submit.mutate()}>
               {busy ? busy : "Review Creative"}
             </Button>
@@ -380,7 +380,7 @@ function ReviewIntake() {
         </div>
 
         <aside className="flex flex-col gap-5">
-          <section className="surface px-6 py-[22px]">
+          <section className="surface flex flex-1 flex-col px-6 py-[22px]">
             <h2>Upload Files</h2>
             <p className="mt-1 text-sm text-ink-muted">
               Add a creative brief, copy, creative files, or any combination of the three.
