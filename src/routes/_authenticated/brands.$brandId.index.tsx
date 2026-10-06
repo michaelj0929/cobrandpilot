@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 
 import { Hammer, Upload } from "lucide-react";
 
-import { Empty, PageHead, SectionHead, StateBadge } from "@/components/app-shell";
+import { Empty, PageHead } from "@/components/app-shell";
 import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
 import { SubBrandsPanel } from "@/components/sub-brands";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ import {
   listGaps,
   listSources,
 } from "@/lib/cobrand-client";
-import { ingestSource, proposeForGap, runGapCheck, addManualRule } from "@/lib/cobrand.functions";
+import { ingestSource, runGapCheck } from "@/lib/cobrand.functions";
 
 export const Route = createFileRoute("/_authenticated/brands/$brandId/")({
   component: SourcesAndGaps,
@@ -57,16 +57,12 @@ function SourcesAndGaps() {
 
   const ingest = useServerFn(ingestSource);
   const gapCheck = useServerFn(runGapCheck);
-  const propose = useServerFn(proposeForGap);
-  const addRule = useServerFn(addManualRule);
 
   const [classification, setClassification] = useState<string>("");
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [answering, setAnswering] = useState<string | null>(null);
-  const [answer, setAnswer] = useState("");
 
   const sources = useQuery({
     queryKey: ["sources", brandId],
@@ -177,49 +173,6 @@ function SourcesAndGaps() {
     onError: (e) => setError((e as Error).message),
   });
 
-  const recheck = useMutation({
-    mutationFn: async () => {
-      setBusy("Checking the model for gaps…");
-      await gapCheck({ data: { brandId } });
-      refresh();
-    },
-    onSettled: () => setBusy(null),
-    onError: (e) => setError((e as Error).message),
-  });
-
-  const proposeFor = useMutation({
-    mutationFn: async (gapId: string) => {
-      setBusy("Drafting a candidate rule…");
-      const result = await propose({ data: { gapId } });
-      refresh();
-      if (!result.proposed) setError(result.reason);
-    },
-    onSettled: () => setBusy(null),
-    onError: (e) => setError((e as Error).message),
-  });
-
-  const answerGap = useMutation({
-    mutationFn: async (gap: { id: string; topic: string; layer: string | null }) => {
-      setBusy("Saving…");
-      await addRule({
-        data: {
-          brandId,
-          gapId: gap.id,
-          layer: gap.layer ?? "identity",
-          ruleType: "other",
-          label: gap.topic,
-          statement: answer.trim(),
-          value: "",
-          severity: "must",
-        },
-      });
-      setAnswering(null);
-      setAnswer("");
-      refresh();
-    },
-    onSettled: () => setBusy(null),
-    onError: (e) => setError((e as Error).message),
-  });
 
   const removeSource = useMutation({
     mutationFn: async (id: string) => {
@@ -228,7 +181,6 @@ function SourcesAndGaps() {
     },
   });
 
-  const openGaps = (gaps.data ?? []).filter((g) => !g.resolved);
 
   // Real progress of the build: one step per document, then the gap check.
   const buildSteps: Step[] = build
@@ -438,99 +390,11 @@ function SourcesAndGaps() {
             <section className="rounded-lg bg-sky-tint px-6 py-[22px]">
               <h2>Built on {masterName}</h2>
               <p className="mt-1.5 text-sm">
-                The master brand covers the essentials (purpose, logo, colour, voice), so a{" "}
-                {brand.data ? BRAND_KIND_LABEL[brand.data.kind].toLowerCase() : "sub-brand"} has no
-                setup gaps of its own. Anything here that contradicts a confirmed {masterName} rule
-                is flagged in its Brand System.
+                Anything here that contradicts a confirmed {masterName} rule is flagged in its
+                Brand System.
               </p>
             </section>
-          ) : (
-            <div>
-              <SectionHead
-                title="Setup gaps"
-                description="What the brand model is missing or too vague about. These stay visible until they are answered — CoBrand will not guess."
-                actions={
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={!!busy}
-                    onClick={() => recheck.mutate()}
-                  >
-                    Re-check
-                  </Button>
-                }
-              />
-
-              <div className="flex flex-col gap-3">
-                {openGaps.length === 0 ? (
-                  <Empty
-                    title="Nothing outstanding"
-                    body="Once materials are ingested, anything missing or vague appears here."
-                  />
-                ) : (
-                  openGaps.map((gap) => (
-                    <div key={gap.id} className="surface px-6 py-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-semibold">{gap.topic}</p>
-                        <StateBadge state={gap.gap_type} />
-                      </div>
-                      {gap.why_it_matters ? (
-                        <p className="mt-1.5 text-sm text-ink-muted">{gap.why_it_matters}</p>
-                      ) : null}
-                      {gap.source_note ? (
-                        <p className="mt-1.5 text-xs text-ink-muted">{gap.source_note}</p>
-                      ) : null}
-
-                      {answering === gap.id ? (
-                        <div className="mt-3">
-                          <Textarea
-                            rows={3}
-                            autoFocus
-                            placeholder="Write the answer in your own words…"
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                          />
-                          <div className="mt-3 flex gap-2">
-                            <Button
-                              size="sm"
-                              disabled={!!busy || answer.trim().length < 3}
-                              onClick={() => answerGap.mutate(gap)}
-                            >
-                              Save as brand truth
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setAnswering(null)}>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="mt-3.5 flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => {
-                              setAnswering(gap.id);
-                              setAnswer("");
-                            }}
-                          >
-                            Answer it
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="quiet"
-                            disabled={!!busy}
-                            onClick={() => proposeFor.mutate(gap.id)}
-                          >
-                            Let CoBrand propose
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+          ) : null}
         </section>
       </div>
 
