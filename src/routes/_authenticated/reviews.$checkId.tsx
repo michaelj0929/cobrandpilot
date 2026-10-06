@@ -125,7 +125,7 @@ function ReviewResult() {
         workspaceId: (brands.data ?? []).find((brand) => brand.id === reviewedBrandId)?.workspace_id ?? null,
       }}
     >
-      <div className="rise-enter mb-7 flex flex-wrap items-end justify-between gap-6">
+      <div className="rise-enter mb-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
         <div className="flex max-w-[600px] flex-col gap-2.5">
           <p className="eyebrow">
             {check.data.brands?.name} · brand model v{check.data.brand_model_version}
@@ -147,7 +147,7 @@ function ReviewResult() {
             ))}
           </p>
         </div>
-        <section className="surface max-w-sm px-5 py-4">
+        <section className="surface w-full px-5 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
             Overall result
           </p>
