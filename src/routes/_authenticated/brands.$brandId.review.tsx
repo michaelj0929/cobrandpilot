@@ -419,38 +419,19 @@ function ReviewIntake() {
                   setReport(null);
                 }}
               />
-              <div className="mt-1.5 flex flex-wrap items-center gap-3 rounded-md border-[1.5px] border-dashed border-brand-soft px-4 py-3">
-                <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()}>
-                  {assets.length ? "Add more files" : "Choose files"}
-                </Button>
-                <span className="min-w-0 truncate text-sm text-ink-muted">
-                  {assets.length
-                    ? `${assets.length} ${assets.length === 1 ? "asset" : "assets"} in this review`
-                    : "For example: PDF, PowerPoint, Word, CSV, Figma exports, images or logos"}
-                </span>
+              <div className="mt-1.5">
+                <FilePicker
+                  files={assets}
+                  onChoose={() => fileInput.current?.click()}
+                  onRemove={(i) => {
+                    setAssets((current) => current.filter((_, j) => j !== i));
+                    setCheckId(null);
+                    setReport(null);
+                  }}
+                  emptyLabel="PDF, PowerPoint, Word, images, logos or SVG"
+                  busy={!!busy}
+                />
               </div>
-              {assets.length ? (
-                <ul className="mt-2 text-sm">
-                  {assets.map((file, i) => (
-                    <li key={`${file.name}-${i}`} className="flex items-center justify-between gap-3 border-t border-line-soft py-2 first:border-t-0">
-                      <span className="truncate">{file.name}</span>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="px-0"
-                        disabled={!!busy}
-                        onClick={() => {
-                          setAssets((current) => current.filter((_, j) => j !== i));
-                          setCheckId(null);
-                          setReport(null);
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
             </div>
           </section>
 
@@ -576,17 +557,24 @@ function FilePicker({
   busy: boolean;
 }) {
   return (
-    <div className="rounded-md border-[1.5px] border-dashed border-brand-soft px-4 py-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="secondary" size="sm" disabled={busy} onClick={onChoose}>
-          {files.length ? "Add more files" : "Choose files"}
-        </Button>
-        <span className="min-w-0 text-sm text-ink-muted">
-          {files.length
-            ? `${files.length} ${files.length === 1 ? "file" : "files"} selected`
-            : emptyLabel}
+    <div>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={onChoose}
+        className="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-[1.5px] border-dashed border-brand-soft bg-card px-6 py-7 text-center transition-colors hover:bg-brand-tint/40 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span className="flex size-[60px] items-center justify-center rounded-full bg-brand-tint text-brand">
+          <Upload aria-hidden className="size-6" strokeWidth={2} />
         </span>
-      </div>
+        <span className="text-base leading-[22px] font-semibold">
+          {files.length ? "Add more files" : "Upload files"}
+        </span>
+        <span className="text-[13px] text-ink-muted">
+          <span className="font-semibold text-brand underline underline-offset-[3px]">browse files</span>{" "}
+          · {files.length ? `${files.length} ${files.length === 1 ? "file" : "files"} selected` : emptyLabel}
+        </span>
+      </button>
       {files.length ? (
         <ul className="mt-2 text-sm">
           {files.map((file, index) => (
