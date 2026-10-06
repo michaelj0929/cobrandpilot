@@ -179,40 +179,7 @@ function BrandBrain() {
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
         />
       )}
-      {(family.data?.master && family.data.subBrands.length > 0) ? (
-        <nav aria-label="Choose a brand" className="mb-6 flex flex-wrap items-center gap-1.5">
-          {[family.data.master, ...family.data.subBrands].map((b) => (
-            <Link
-              key={b.id}
-              to="/brands/$brandId/brain"
-              params={{ brandId: b.id }}
-              aria-current={b.id === brandId ? "page" : undefined}
-              className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-4 text-sm transition-colors ${
-                b.id === brandId
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-line-soft hover:bg-brand-tint/40"
-              }`}
-            >
-              {b.name}
-              <span className="text-[11px] opacity-70">{BRAND_KIND_LABEL[b.kind]}</span>
-            </Link>
-          ))}
-        </nav>
-      ) : null}
-      <div className="mb-7 flex flex-wrap items-center gap-3">
-        <Button asChild variant="secondary">
-          <Link to="/brands/$brandId/review" params={{ brandId: family.data?.master?.id ?? brandId }}>
-            <ArrowRight aria-hidden />
-            Creative Review
-          </Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link to="/brands/$brandId" params={{ brandId }}>
-            <Upload aria-hidden />
-            Add more materials
-          </Link>
-        </Button>
-      </div>
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing guidelines for" />
 
       {!parentId && brand.data ? (
         <div className="mb-10">
