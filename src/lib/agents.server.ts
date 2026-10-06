@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { runAgent, type AgentFile } from "./ai-gateway.server";
 
-export const LAYERS = ["foundation", "identity", "execution"] as const;
+import { ALL_CATEGORIES, LAYERS, LAYER_CATEGORIES } from "./brand-layers";
+export { LAYERS };
+const CATEGORY_GUIDE = `intent (what does the brand mean?): ${LAYER_CATEGORIES.intent.join(", ")}\nrecognition (what makes it recognizable?): ${LAYER_CATEGORIES.recognition.join(", ")}\nexecution (how does the brand get made?): ${LAYER_CATEGORIES.execution.join(", ")}`;
 export const RULE_TYPES = [
   "foundation",
   "color",
@@ -68,6 +70,7 @@ export function classifyDocument(input: {
 
 const extractedRule = z.object({
   layer: z.enum(LAYERS),
+  category: z.enum(ALL_CATEGORIES),
   rule_type: z.enum(RULE_TYPES),
   label: z.string(),
   statement: z.string(),
@@ -78,6 +81,10 @@ const extractedRule = z.object({
   authority: z.string().nullable(),
   review_state: z.enum(["confirmed", "inferred"]),
   confidence,
+  confidence_score: z.number(),
+  scope_tags: z.array(z.string()),
+  source_document: z.string(),
+  source_page: z.number().nullable(),
   source_citation: z.string(),
   source_evidence: z.string().nullable(),
   context: z.object({
@@ -120,7 +127,15 @@ export function extractRules(input: {
 You are Agent B, the brand extractor. Transform the source into explicit, atomic rule objects — never a summary.
 
 Rules to follow:
-- layer: foundation = purpose/positioning/audience/differentiators/values/proof; identity = logo, colour roles, typography system, voice traits, visual signatures; execution = exact tokens, spacing, grids, imagery treatment, banned phrases, reading level, CTA and copy patterns, do/don't examples.
+You are turning brand guidelines into code: every rule becomes a structured record that a creative reviewer can check mechanically.
+- layer and category: pick the layer, then a category from that layer only:
+${CATEGORY_GUIDE}
+- statement: the rule itself, phrased as a checkable instruction (e.g. "Maintain clear space equal to the height of the symbol."), never a vague summary like "the logo should have sufficient clear space" unless the source itself is that vague.
+- scope_tags: where the rule applies, e.g. ["global"], ["paid_social"], ["north_america"].
+- source_document: the document's title as written (e.g. "Master Brand Guidelines"); source_page: the page or slide number, or null if unknown.
+- confidence_score: 0-1, how certain you are the rule is stated exactly like this in the source.
+- authority: who owns the rule, e.g. "brand_owner", "legal", "campaign_team"; null if unknown.
+- rule_type: the closest legacy type to the category.
 - value: the concrete machine-usable value where one exists (a hex like "#1A1A1A", a font family, "1x symbol height", "grade 8"), otherwise null.
 - review_state: "confirmed" only when the source states it directly. "inferred" when you read between the lines — then source_evidence must quote the evidence.
 - severity: must = non-negotiable; should = strong default; can = optional.
@@ -181,9 +196,9 @@ export function analyzeGaps(input: { brandName: string; rules: string }) {
     effort: "medium",
     system: `${SHARED_RULES}
 You are Agent D, the gap analyser. Check the brand model against CoBrand's essential checklist:
-Foundation — positioning statement, primary audience, at least one core differentiator.
-Identity — at least one primary colour role, a heading and a body typography role, a primary logo variant with a usage rule, at least three voice traits.
-Execution — at least one do/don't example pair, a reading-level target or equivalent voice guardrail, and either a banned-phrases list or an explicit confirmation that none exist.
+Intent — positioning statement, primary audience, at least one core differentiator.
+Recognition — at least one primary colour role, a heading and a body typography role, a primary logo variant with a usage rule, at least three voice traits.
+Execution — at least one do/don't example pair, a reading-level target or equivalent voice guardrail, and either a banned-claims/terminology list or an explicit confirmation that none exist.
 Report "missing" when nothing was found and "vague" when something exists but is not specific enough to check creative against. Never upgrade a vague item into a precise one.`,
     prompt: `Brand: ${input.brandName}\n\nCurrent brand model:\n${input.rules || "(empty)"}`,
     fallback: { gaps: [], summary: "Gap check unavailable.", found: [] },
@@ -291,7 +306,7 @@ Each rule names its origin: the master brand, or a sub-brand / product line the 
 Creative context: ${input.context}
 Creative: ${input.creativeSummary}
 
-Brand model rules (id | origin | layer | type | label | statement | value | severity | scope | time | status | context tags):
+Brand model rule records (JSON):
 ${input.rules}`,
     fallback: {
       applicable_rule_ids: [],
@@ -349,13 +364,14 @@ You are Agent F, the creative reviewer. Work in three passes, exactly like a hum
 2. Interpretive: imagery feel, hierarchy, composition, density, tone, messaging, CTA choice, audience relevance.
 3. Contextual: fit with the stated channel, objective, audience, market, product and campaign.
 Only judge against the rules given to you. Never invent a rule.
+The rules are structured records (JSON). For each rule that applies, check the creative against its exact statement and value and report whether it passes or fails; set rule_id to the record's "id". Mention the rule_code in the title or finding. Treat severity "must" as non-negotiable.
 Each rule names its origin: the master brand or a selected sub-brand / product line. Judge against all of them; where they disagree, a master brand "must" wins, otherwise the more specific sub-brand / product-line rule wins.
 Report both issues and notable passes. Set confidence honestly and separately from severity.
 For a visual asset, give pin_x and pin_y as PERCENTAGES (0-100) of the image width and height pointing at the exact spot the finding refers to. For copy, quote the exact phrase instead and leave pins null.`,
     prompt: `Brand: ${input.brandName}
 Creative context: ${input.context}
 
-Applicable rules (id | origin | statement | severity | source):
+Applicable rule records (JSON):
 ${input.rules}
 
 ${input.briefText ? `Creative brief provided by the user:\n${input.briefText}\n` : ""}
