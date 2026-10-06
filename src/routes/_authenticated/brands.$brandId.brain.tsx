@@ -144,7 +144,7 @@ function BrandBrain() {
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
         />
       )}
-      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing" />
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
 
       <div
         role="tablist"
@@ -283,7 +283,7 @@ function BrandBrain() {
             )}
           </div>
         </div>
-        <aside className="lg:sticky lg:top-8">{statusBlock}</aside>
+        <aside className="order-first lg:order-none lg:sticky lg:top-8">{statusBlock}</aside>
       </div>
 
       <section className="surface mt-10 px-6 py-[22px]">

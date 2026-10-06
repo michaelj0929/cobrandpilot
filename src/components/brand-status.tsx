@@ -19,7 +19,7 @@ export function BrandStatusCard({
 }) {
   const pct = total ? Math.round((confirmed / total) * 100) : 0;
   return (
-    <section className="w-full rounded-xl bg-brand-tint px-5 py-4 sm:w-[300px]">
+    <section className="w-full rounded-xl bg-brand-tint px-5 py-4">
       <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brand status</h2>
       <p className="mt-1.5 text-brand">
         <span className="text-3xl font-semibold tracking-tight">{pct}%</span>
