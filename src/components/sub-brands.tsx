@@ -23,6 +23,7 @@ import {
   MAX_FILE_BYTES,
   createBrand,
   createSourceFromFile,
+  deleteBrand,
   getBrandFamilyOf,
   type Brand,
   type BrandKind,
