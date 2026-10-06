@@ -99,12 +99,21 @@ function ReviewResult() {
   const dimensions = [
     {
       label: "Brand Compliant",
+      caption: "Visual identity, tone and channel fit",
       verdict: reviewVerdict(
         averageScores(scores["recognition"], scores["channel_fit"], scores["campaign_fit"]),
       ),
     },
-    { label: "Copy", verdict: reviewVerdict(scores["messaging"]) },
-    { label: "Layout", verdict: reviewVerdict(scores["layout"]) },
+    {
+      label: "Copy",
+      caption: "Message, tone of voice and calls to action",
+      verdict: reviewVerdict(scores["messaging"]),
+    },
+    {
+      label: "Layout",
+      caption: "Hierarchy, spacing and composition",
+      verdict: reviewVerdict(scores["layout"]),
+    },
   ];
 
   return (
@@ -138,10 +147,12 @@ function ReviewResult() {
             ))}
           </p>
         </div>
-        <section className={`max-w-sm rounded-md border px-5 py-4 ${overallVerdict.className}`}>
-          <p className="text-xs font-semibold uppercase">Overall result</p>
-          <h2 className="mt-1 text-lg leading-6">{overallVerdict.label}</h2>
-          <p className="mt-1 text-xs leading-5 opacity-80">{overallVerdict.description}</p>
+        <section className="surface max-w-sm px-5 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+            Overall result
+          </p>
+          <VerdictPill verdict={overallVerdict} className="mt-2.5" />
+          <p className="mt-2 text-xs leading-5 text-ink-muted">{overallVerdict.description}</p>
         </section>
       </div>
 
@@ -151,14 +162,14 @@ function ReviewResult() {
         </p>
       ) : null}
 
-      <section className="surface grid gap-px overflow-hidden bg-line-soft sm:grid-cols-3">
-        {dimensions.map(({ label, verdict }) => (
-          <div key={label} className="flex min-h-28 flex-col justify-between bg-card px-6 py-5">
-            <h2 className="text-[13px] leading-[18px] text-ink-muted">{label}</h2>
-            <p className="mt-4 flex items-center gap-2 text-sm font-semibold">
-              <span className={`size-2 shrink-0 rounded-full ${verdict.dotClassName}`} aria-hidden />
-              {verdict.label}
-            </p>
+      <section className="grid gap-4 sm:grid-cols-3">
+        {dimensions.map(({ label, caption, verdict }) => (
+          <div key={label} className="surface surface-hover flex min-h-[136px] flex-col px-5 py-5">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              {label}
+            </h2>
+            <VerdictPill verdict={verdict} className="mt-3" />
+            <p className="mt-auto pt-3 text-[11px] leading-4 text-ink-muted">{caption}</p>
           </div>
         ))}
       </section>
@@ -270,7 +281,9 @@ function ReviewResult() {
                 </span>
               </summary>
               <div className="ml-10 mt-4 border-t border-line-soft pt-4">
-                  <h4 className="text-xs font-semibold uppercase text-ink-muted">What was flagged</h4>
+                  <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                    What was flagged
+                  </h4>
                   <p className="mt-2.5 text-sm">{f.explanation}</p>
                   {f.why_it_matters ? (
                     <p className="mt-1.5 text-sm text-ink-muted">{f.why_it_matters}</p>
@@ -287,20 +300,28 @@ function ReviewResult() {
                     </p>
                   ) : null}
                   {f.rule_statement ? (
-                    <div className="mt-3 border-t border-line-soft pt-3 text-sm">
-                      <p className="font-semibold text-brand">
-                        Brand guideline cited{f.rule_code ? ` · ${f.rule_code}` : ""}
-                      </p>
-                      <p className="mt-2">{f.rule_statement}</p>
-                      {f.source_citation ? (
-                        <p className="mt-1 text-xs text-ink-muted">{f.source_citation}</p>
-                      ) : null}
-                      {f.applies_because ? (
-                        <p className="mt-1 text-xs text-ink-muted">
-                          Applies here because {f.applies_because}
-                        </p>
-                      ) : null}
-                    </div>
+                    <details className="group/guide mt-3 border-t border-line-soft pt-3">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:content-none">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">
+                          Brand guideline cited{f.rule_code ? ` · ${f.rule_code}` : ""}
+                        </span>
+                        <ChevronDown
+                          aria-hidden
+                          className="size-3.5 shrink-0 text-ink-muted transition-transform duration-200 group-open/guide:rotate-180"
+                        />
+                      </summary>
+                      <div className="reveal-enter mt-2.5 rounded-md bg-page px-3.5 py-3 text-sm">
+                        <p>{f.rule_statement}</p>
+                        {f.source_citation ? (
+                          <p className="mt-1.5 text-xs text-ink-muted">{f.source_citation}</p>
+                        ) : null}
+                        {f.applies_because ? (
+                          <p className="mt-1.5 text-xs text-ink-muted">
+                            Applies here because {f.applies_because}
+                          </p>
+                        ) : null}
+                      </div>
+                    </details>
                   ) : null}
               </div>
             </details>
