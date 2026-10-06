@@ -66,8 +66,8 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
   const isOn = {
     home: workspaceId ? pathname === `/workspaces/${workspaceId}` : pathname === "/workspaces" || pathname === "/workspaces/",
     settings: pathname.startsWith("/settings"),
-    uploads: brandBase !== null && pathname === brandBase,
-    system: brandBase !== null && pathname.startsWith(`${brandBase}/brain`),
+    uploads: brandBase !== null && /^\/brands\/[^/]+\/?$/.test(pathname),
+    system: brandBase !== null && /^\/brands\/[^/]+\/brain/.test(pathname),
     checks: masterId !== null && pathname === `/brands/${masterId}/review`,
     past:
       (masterId !== null && pathname.startsWith(`/brands/${masterId}/reviews`)) ||
@@ -143,7 +143,7 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
         </Link>
       )}
       {workspaceId ? <><BrandNavLink
-        brandId={brand?.id}
+        brandId={masterId ?? undefined}
         to="/brands/$brandId"
         icon={Upload}
         label="Uploads"
@@ -151,7 +151,7 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
         collapsed={collapsed}
       />
       <BrandNavLink
-        brandId={brand?.id}
+        brandId={masterId ?? undefined}
         to="/brands/$brandId/brain"
         icon={LayoutGrid}
         label="Brand System"

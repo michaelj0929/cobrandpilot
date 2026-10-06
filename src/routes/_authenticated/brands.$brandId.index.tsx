@@ -8,6 +8,7 @@ import { Hammer, Upload } from "lucide-react";
 import { Empty, PageHead } from "@/components/app-shell";
 import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
 import { SubBrandsPanel } from "@/components/sub-brands";
+import { BrandScopePicker } from "@/components/brand-scope";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
@@ -215,11 +216,13 @@ function SourcesAndGaps() {
         }
       />
 
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId" label="1. Choose what you're uploading to" />
+
       <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_1fr]">
         <section className="flex flex-col gap-5">
           <div className="surface flex flex-col gap-5 px-6 py-[22px]">
             <div className="grid max-w-sm gap-1.5">
-              <Label>Choose the document type that best fits</Label>
+              <Label>2. Choose the document type that best fits</Label>
               <Select value={classification} onValueChange={setClassification}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a document type" />
