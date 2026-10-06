@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 
 import { PageHead } from "@/components/app-shell";
@@ -69,8 +70,8 @@ function ReviewIntake() {
     copy: UploadedFile[];
   } | null>(null);
 
-  const readiness = checkReadiness;
-  const review = runReview;
+  const readiness = useServerFn(checkReadiness);
+  const review = useServerFn(runReview);
 
   const [brief, setBrief] = useState("");
   const [copy, setCopy] = useState("");
@@ -558,5 +559,55 @@ function ReviewIntake() {
         </aside>
       </div>
     </>
+  );
+}
+
+function FilePicker({
+  files,
+  onChoose,
+  onRemove,
+  emptyLabel,
+  busy,
+}: {
+  files: File[];
+  onChoose: () => void;
+  onRemove: (index: number) => void;
+  emptyLabel: string;
+  busy: boolean;
+}) {
+  return (
+    <div className="rounded-md border-[1.5px] border-dashed border-brand-soft px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="secondary" size="sm" disabled={busy} onClick={onChoose}>
+          {files.length ? "Add more files" : "Choose files"}
+        </Button>
+        <span className="min-w-0 text-sm text-ink-muted">
+          {files.length
+            ? `${files.length} ${files.length === 1 ? "file" : "files"} selected`
+            : emptyLabel}
+        </span>
+      </div>
+      {files.length ? (
+        <ul className="mt-2 text-sm">
+          {files.map((file, index) => (
+            <li
+              key={`${file.name}-${index}`}
+              className="flex items-center justify-between gap-3 border-t border-line-soft py-2 first:border-t-0"
+            >
+              <span className="truncate">{file.name}</span>
+              <Button
+                variant="link"
+                size="sm"
+                className="px-0"
+                disabled={busy}
+                onClick={() => onRemove(index)}
+              >
+                Remove
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
