@@ -68,6 +68,7 @@ function BrandBrain() {
 
   const rules = useQuery({ queryKey: ["rules", brandId], queryFn: () => listRules(brandId) });
   const gaps = useQuery({ queryKey: ["gaps", brandId], queryFn: () => listGaps(brandId) });
+  const navigate = useNavigate();
   const brand = useQuery({ queryKey: ["brand", brandId], queryFn: () => getBrand(brandId) });
   const parentId = brand.data?.parent_brand_id ?? null;
   const master = useQuery({
