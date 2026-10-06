@@ -182,7 +182,7 @@ function BrandBrain() {
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
         />
       )}
-      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing guidelines for" />
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
 
 
 
