@@ -246,7 +246,7 @@ export function SubBrandsPanel({ master }: { master: Brand }) {
  * brand and recreates it with the same name and type, then uploads the chosen
  * guideline documents to its Uploads page.
  */
-export function SubBrandActions({ sub }: { sub: Brand; masterId?: string }) {
+export function SubBrandActions({ sub, onDeleted }: { sub: Brand; masterId?: string; onDeleted?: () => void }) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -256,6 +256,8 @@ export function SubBrandActions({ sub }: { sub: Brand; masterId?: string }) {
       setConfirming(false);
       queryClient.invalidateQueries({ queryKey: ["brand-family"] });
       queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["family-of"] });
+      onDeleted?.();
     },
     onError: (e) => setError((e as Error).message),
   });

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { Empty, PageHead, StateBadge } from "@/components/app-shell";
 import { BrandScopePicker } from "@/components/brand-scope";
+import { SubBrandActions } from "@/components/sub-brands";
 import { BrandStatusCard } from "@/components/brand-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,6 +149,15 @@ function BrandBrain() {
         <div className="flex min-w-0 flex-col gap-5">
           <div>
             <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
+            {parentId && brand.data ? (
+              <div className="-mt-2 mb-4 flex items-center gap-2 text-xs text-ink-muted">
+                <span>Remove {brand.data.name} from {master.data?.name ?? "the master brand"}</span>
+                <SubBrandActions
+                  sub={brand.data}
+                  onDeleted={() => navigate({ to: "/brands/$brandId/brain", params: { brandId: parentId } })}
+                />
+              </div>
+            ) : null}
 
             <div
               role="tablist"
