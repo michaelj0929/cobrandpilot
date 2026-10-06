@@ -192,6 +192,7 @@ export type Database = {
           pin_x: number | null
           pin_y: number | null
           quote: string | null
+          rule_code: string | null
           rule_id: string | null
           rule_statement: string | null
           severity: string
@@ -214,6 +215,7 @@ export type Database = {
           pin_x?: number | null
           pin_y?: number | null
           quote?: string | null
+          rule_code?: string | null
           rule_id?: string | null
           rule_statement?: string | null
           severity?: string
@@ -236,6 +238,7 @@ export type Database = {
           pin_x?: number | null
           pin_y?: number | null
           quote?: string | null
+          rule_code?: string | null
           rule_id?: string | null
           rule_statement?: string | null
           severity?: string
@@ -355,19 +358,25 @@ export type Database = {
         Row: {
           authority: string | null
           brand_id: string
+          category: string | null
           confidence: string | null
+          confidence_score: number | null
           conflict_note: string | null
           created_at: string
           id: string
           label: string
           layer: string
           review_state: string
+          rule_code: string | null
           rule_type: string
           scope: string
+          scope_tags: string[]
           severity: string
           source_citation: string | null
+          source_document: string | null
           source_evidence: string | null
           source_file_id: string | null
+          source_page: number | null
           statement: string | null
           status: string
           superseded_by: string | null
@@ -378,19 +387,25 @@ export type Database = {
         Insert: {
           authority?: string | null
           brand_id: string
+          category?: string | null
           confidence?: string | null
+          confidence_score?: number | null
           conflict_note?: string | null
           created_at?: string
           id?: string
           label: string
           layer?: string
           review_state?: string
+          rule_code?: string | null
           rule_type: string
           scope?: string
+          scope_tags?: string[]
           severity?: string
           source_citation?: string | null
+          source_document?: string | null
           source_evidence?: string | null
           source_file_id?: string | null
+          source_page?: number | null
           statement?: string | null
           status?: string
           superseded_by?: string | null
@@ -401,19 +416,25 @@ export type Database = {
         Update: {
           authority?: string | null
           brand_id?: string
+          category?: string | null
           confidence?: string | null
+          confidence_score?: number | null
           conflict_note?: string | null
           created_at?: string
           id?: string
           label?: string
           layer?: string
           review_state?: string
+          rule_code?: string | null
           rule_type?: string
           scope?: string
+          scope_tags?: string[]
           severity?: string
           source_citation?: string | null
+          source_document?: string | null
           source_evidence?: string | null
           source_file_id?: string | null
+          source_page?: number | null
           statement?: string | null
           status?: string
           superseded_by?: string | null
