@@ -278,7 +278,7 @@ export function SubBrandActions({ sub, masterId }: { sub: Brand; masterId: strin
       await deleteBrand(sub.id);
       const id = await createBrand({
         name: sub.name,
-        description: sub.description ?? undefined,
+        description: sub.description ?? null,
         parentBrandId: masterId,
         kind: sub.kind,
       });
