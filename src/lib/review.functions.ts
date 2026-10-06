@@ -110,6 +110,24 @@ async function loadAsset(check: {
   return { file: prepared.file, text: prepared.text };
 }
 
+type SupportingFile = { path: string; name: string; mime: string };
+
+async function loadSupportingFiles(value: unknown, label: string) {
+  if (!Array.isArray(value)) return { files: [] as NonNullable<ReturnType<typeof prepareSource>["file"]>[], texts: [] as string[] };
+  const supabase = await db();
+  const files: NonNullable<ReturnType<typeof prepareSource>["file"]>[] = [];
+  const texts: string[] = [];
+  for (const item of value as SupportingFile[]) {
+    if (!item?.path || !item?.name) continue;
+    const { data: blob } = await supabase.storage.from("creatives").download(item.path);
+    if (!blob) continue;
+    const prepared = prepareSource(new Uint8Array(await blob.arrayBuffer()), item.mime ?? "", item.name);
+    if (prepared.file) files.push(prepared.file);
+    if (prepared.text) texts.push(`${label} file: ${item.name}\n${prepared.text}`);
+  }
+  return { files, texts };
+}
+
 function creativeSummary(check: {
   input_type: string;
   brief_text: string | null;
@@ -205,6 +223,14 @@ export const runReview = createServerFn({ method: "POST" })
       const usedRules = scoped.length > 0 ? scoped : rules;
 
       const asset = await loadAsset(check);
+      const briefFiles = await loadSupportingFiles(
+        (check as { brief_files?: unknown }).brief_files,
+        "Creative brief",
+      );
+      const copyFiles = await loadSupportingFiles(
+        (check as { copy_files?: unknown }).copy_files,
+        "Copy",
+      );
 
       // Agent F — three-pass review.
       const review = await reviewCreative({
@@ -216,9 +242,11 @@ export const runReview = createServerFn({ method: "POST" })
               `${r.id} | ${r.origin} | ${r.statement ?? r.label} | ${r.severity} | ${r.source_citation ?? ""}`,
           )
           .join("\n"),
-        copyText: check.copy_text ?? asset.text,
-        briefText: check.brief_text,
-        file: asset.file,
+        copyText: [check.copy_text, ...copyFiles.texts].filter(Boolean).join("\n\n") || null,
+        briefText: [check.brief_text, ...briefFiles.texts].filter(Boolean).join("\n\n") || null,
+        files: [asset.file, ...briefFiles.files, ...copyFiles.files].filter(
+          (file): file is NonNullable<typeof file> => file !== null,
+        ),
       });
 
       // Agent G — creator-ready recommendations and scoring.

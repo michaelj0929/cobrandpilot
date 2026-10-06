@@ -9,9 +9,9 @@ import { listChecks, listReviewProjects } from "@/lib/cobrand-client";
 export const Route = createFileRoute("/_authenticated/brands/$brandId/reviews")({
   head: () => ({
     meta: [
-      { title: "Past reviews — CoBrand" },
+      { title: "Past Reviews — CoBrand" },
       { name: "description", content: "Every creative review project, its dates and its assets." },
-      { property: "og:title", content: "Past reviews — CoBrand" },
+      { property: "og:title", content: "Past Reviews — CoBrand" },
       { property: "og:description", content: "Browse past creative review projects and scores." },
     ],
   }),
@@ -41,13 +41,13 @@ function PastReviews() {
   return (
     <>
       <PageHead
-        title="Past reviews"
+        title="Past Reviews"
         description="Every review project, with its dates, brief context and the assets checked."
       />
       <div className="mb-6">
         <Button asChild>
           <Link to="/brands/$brandId/review" params={{ brandId }}>
-            Check new creative
+            Creative Review
           </Link>
         </Button>
       </div>

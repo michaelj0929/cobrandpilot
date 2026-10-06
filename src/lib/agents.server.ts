@@ -338,7 +338,7 @@ export function reviewCreative(input: {
   rules: string;
   copyText: string | null;
   briefText: string | null;
-  file: AgentFile | null;
+  files: AgentFile[];
 }) {
   return runAgent({
     schema: reviewSchema,
@@ -360,8 +360,8 @@ ${input.rules}
 
 ${input.briefText ? `Creative brief provided by the user:\n${input.briefText}\n` : ""}
 ${input.copyText ? `Copy submitted for review:\n${input.copyText}\n` : ""}
-${input.file ? "The creative asset itself is attached." : ""}`,
-    ...(input.file ? { files: [input.file] } : {}),
+${input.files.length ? "The submitted creative, brief, or copy files are attached." : ""}`,
+    ...(input.files.length ? { files: input.files } : {}),
     fallback: { observations: [] },
   });
 }

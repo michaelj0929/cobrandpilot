@@ -163,19 +163,19 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
           to="/brands/$brandId/review"
           params={{ brandId: masterId }}
           search={brand?.master ? { with: brand.id } : {}}
-          title="Check new creative"
-          aria-label="Check new creative"
+          title="Creative Review"
+          aria-label="Creative Review"
           className={itemClass(isOn.checks)}
         >
           <NavIcon icon={CircleCheck} />
-          <span className={labelClass}>Check new creative</span>
+          <span className={labelClass}>Creative Review</span>
         </Link>
       ) : (
         <BrandNavLink
           brandId={undefined}
           to="/brands/$brandId/review"
           icon={CircleCheck}
-          label="Check new creative"
+          label="Creative Review"
           active={false}
           collapsed={collapsed}
         />
@@ -184,7 +184,7 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
         brandId={masterId ?? undefined}
         to="/brands/$brandId/reviews"
         icon={History}
-        label="Past reviews"
+        label="Past Reviews"
         active={isOn.past}
         collapsed={collapsed}
       />

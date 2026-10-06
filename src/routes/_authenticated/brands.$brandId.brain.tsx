@@ -177,7 +177,7 @@ function BrandBrain() {
         <Button asChild variant="secondary">
           <Link to="/brands/$brandId/review" params={{ brandId }}>
             <ArrowRight aria-hidden />
-            Review creative
+            Creative Review
           </Link>
         </Button>
         <Button asChild variant="secondary">
