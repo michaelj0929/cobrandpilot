@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { Empty, PageHead, StateBadge } from "@/components/app-shell";
 import { BrandScopePicker } from "@/components/brand-scope";
+import { BrandStatusCard } from "@/components/brand-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,41 +120,14 @@ function BrandBrain() {
     };
   }, [rules.data]);
 
-  const confirmedPct = counts.total ? (counts.confirmed / counts.total) * 100 : 0;
-
   const statusBlock = (
-    <div className="flex flex-col items-stretch gap-3 sm:items-end">
-      <section className="rounded-lg bg-brand-tint px-5 py-3.5">
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brand status</h2>
-            <p className="mt-1 text-[13px] font-semibold text-brand">
-              {counts.total} rules · {counts.confirmed} confirmed · {counts.review} awaiting review
-            </p>
-            <div
-              className="mt-2 h-1.5 w-56 overflow-hidden rounded-full bg-brand-soft"
-              role="progressbar"
-              aria-label="Confirmed rules"
-              aria-valuenow={Math.round(confirmedPct)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full bg-brand transition-[width] duration-700"
-                style={{ width: `${confirmedPct}%` }}
-              />
-            </div>
-          </section>
-          <Button asChild variant="secondary">
-            <Link to="/brands/$brandId/check" params={{ brandId }}>
-              <ClipboardCheck aria-hidden />
-              Brand Check
-              {openGapCount > 0 ? (
-                <span className="ml-1 rounded-full bg-[var(--missing)]/10 px-2 text-[11px] font-semibold text-[var(--missing)]">
-                  {openGapCount}
-                </span>
-              ) : null}
-            </Link>
-          </Button>
-    </div>
+    <BrandStatusCard
+      brandId={brandId}
+      total={counts.total}
+      confirmed={counts.confirmed}
+      review={counts.review}
+      missing={openGapCount}
+    />
   );
 
   return (
@@ -175,9 +149,7 @@ function BrandBrain() {
           actionsAlign="start"
         />
       )}
-      <div className="mb-6">
-        <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
-      </div>
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing" />
 
       <div role="tablist" aria-label="Brand layers" className="mb-2 flex flex-wrap items-center gap-2">
         {LAYERS.map((l) => {

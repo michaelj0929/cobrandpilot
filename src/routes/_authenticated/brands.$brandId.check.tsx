@@ -144,7 +144,7 @@ function BrandCheck() {
           </Button>
         }
       />
-      <BrandScopePicker brandId={brandId} to="/brands/$brandId/check" label="Brand" />
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId/check" label="Viewing" />
 
       <div className="surface mb-8 px-6 py-5">
         <p className="text-sm">
