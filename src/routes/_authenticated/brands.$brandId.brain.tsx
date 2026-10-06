@@ -184,22 +184,43 @@ function BrandBrain() {
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
-        <Button asChild variant="secondary" className="mb-6">
-          <Link to="/brands/$brandId/check" params={{ brandId }}>
-            <ClipboardCheck aria-hidden />
-            Brand Check
-            {openGapCount > 0 ? (
-              <span className="ml-1 rounded-full bg-[var(--missing)]/10 px-2 text-[11px] font-semibold text-[var(--missing)]">
-                {openGapCount}
-              </span>
-            ) : null}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-4">
+          <section className="rounded-lg bg-brand-tint px-5 py-3.5">
+            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brand status</h2>
+            <p className="mt-1 text-[13px] font-semibold text-brand">
+              {counts.total} rules · {counts.confirmed} confirmed · {counts.review} awaiting review
+            </p>
+            <div
+              className="mt-2 h-1.5 w-56 overflow-hidden rounded-full bg-brand-soft"
+              role="progressbar"
+              aria-label="Confirmed rules"
+              aria-valuenow={Math.round(confirmedPct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full bg-brand transition-[width] duration-700"
+                style={{ width: `${confirmedPct}%` }}
+              />
+            </div>
+          </section>
+          <Button asChild variant="secondary">
+            <Link to="/brands/$brandId/check" params={{ brandId }}>
+              <ClipboardCheck aria-hidden />
+              Brand Check
+              {openGapCount > 0 ? (
+                <span className="ml-1 rounded-full bg-[var(--missing)]/10 px-2 text-[11px] font-semibold text-[var(--missing)]">
+                  {openGapCount}
+                </span>
+              ) : null}
+            </Link>
+          </Button>
+        </div>
       </div>
 
 
 
-      <div role="tablist" aria-label="Brand layers" className="mb-8 grid gap-3 sm:grid-cols-3">
+      <div role="tablist" aria-label="Brand layers" className="mb-2 flex flex-wrap items-center gap-2">
         {LAYERS.map((l) => {
           const count = (rules.data ?? []).filter((r) => r.layer === l && r.status !== "archived").length;
           return (
@@ -208,21 +229,19 @@ function BrandBrain() {
               role="tab"
               aria-selected={layer === l}
               onClick={() => setLayer(l)}
-              className={`cursor-pointer rounded-lg border px-5 py-4 text-left transition-colors ${
+              className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                 layer === l
                   ? "border-foreground bg-foreground text-background"
-                  : "border-line-soft bg-card hover:bg-brand-tint/40"
+                  : "border-line-soft bg-card text-ink hover:bg-brand-tint/40"
               }`}
             >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="text-base font-semibold">{LAYER_LABEL[l]}</span>
-                <span className="text-xs opacity-70">{count} rules</span>
-              </span>
-              <span className="mt-1 block text-[13px] opacity-75">{LAYER_QUESTION[l]}</span>
+              {LAYER_LABEL[l]}
+              <span className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-ink-muted"}`}>{count}</span>
             </button>
           );
         })}
       </div>
+      <p className="mb-7 text-sm text-ink-muted">{LAYER_QUESTION[layer]}</p>
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
         <div className="flex min-w-0 flex-col gap-5">
@@ -330,27 +349,6 @@ function BrandBrain() {
         </div>
 
         <aside className="flex flex-col gap-5 lg:sticky lg:top-8">
-          <section className="rounded-lg bg-brand-tint px-6 py-[22px]">
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Model status</h2>
-            <p className="stat mt-1">{counts.total}</p>
-            <p className="text-[13px] text-ink">rules held about this brand</p>
-            <div
-              className="mt-4 h-2 w-full overflow-hidden rounded-full bg-brand-soft"
-              role="progressbar"
-              aria-label="Confirmed rules"
-              aria-valuenow={Math.round(confirmedPct)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full bg-brand transition-[width] duration-700"
-                style={{ width: `${confirmedPct}%` }}
-              />
-            </div>
-            <p className="mt-3 border-t border-brand-soft pt-3 text-[13px] font-semibold text-brand">
-              {counts.confirmed} confirmed · {counts.review} awaiting review
-            </p>
-          </section>
 
           <section className="surface px-6 py-[22px]">
             <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">
@@ -407,28 +405,26 @@ function BrandBrain() {
             {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
           </section>
 
-          <section className="surface px-6 py-[22px]">
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">History</h2>
-            <ul className="mt-1.5">
-              {(versions.data ?? []).slice(0, 10).map((version) => (
-                <li
-                  key={version.id}
-                  className="border-t border-line-soft py-3 text-sm first:border-t-0"
-                >
-                  <p className="font-semibold">v{version.version}</p>
-                  <p className="mt-0.5 text-xs text-ink">{version.diff_summary}</p>
-                  <p className="mt-1 text-xs text-ink-muted">
-                    {new Date(version.created_at).toLocaleString()} · via {version.edited_via}
-                  </p>
-                </li>
-              ))}
-              {(versions.data ?? []).length === 0 ? (
-                <li className="py-3 text-xs text-ink-muted">No changes recorded yet.</li>
-              ) : null}
-            </ul>
-          </section>
         </aside>
       </div>
+
+      <section className="surface mt-10 px-6 py-[22px]">
+        <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">History</h2>
+        <ul className="mt-1.5">
+          {(versions.data ?? []).slice(0, 10).map((version) => (
+            <li key={version.id} className="border-t border-line-soft py-3 text-sm first:border-t-0">
+              <p className="font-semibold">v{version.version}</p>
+              <p className="mt-0.5 text-xs text-ink">{version.diff_summary}</p>
+              <p className="mt-1 text-xs text-ink-muted">
+                {new Date(version.created_at).toLocaleString()} · via {version.edited_via}
+              </p>
+            </li>
+          ))}
+          {(versions.data ?? []).length === 0 ? (
+            <li className="py-3 text-xs text-ink-muted">No changes recorded yet.</li>
+          ) : null}
+        </ul>
+      </section>
     </>
   );
 }

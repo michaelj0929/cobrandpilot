@@ -172,7 +172,7 @@ function BrandCheck() {
         </section>
       ) : null}
 
-      <div role="tablist" aria-label="Brand layers" className="mb-5 grid gap-3 sm:grid-cols-3">
+      <div role="tablist" aria-label="Brand layers" className="mb-2 flex flex-wrap items-center gap-2">
         {LAYERS.map((l) => {
           const missing = items.filter((i) => i.layer === l && i.status === "missing").length;
           return (
@@ -181,19 +181,21 @@ function BrandCheck() {
               role="tab"
               aria-selected={layer === l}
               onClick={() => setLayer(l)}
-              className={`cursor-pointer rounded-lg border px-5 py-4 text-left transition-colors ${
-                layer === l ? "border-foreground bg-foreground text-background" : "border-line-soft bg-card hover:bg-brand-tint/40"
+              className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                layer === l ? "border-foreground bg-foreground text-background" : "border-line-soft bg-card text-ink hover:bg-brand-tint/40"
               }`}
             >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="text-base font-semibold">{LAYER_LABEL[l]}</span>
-                <span className="text-xs opacity-70">{missing} missing</span>
-              </span>
-              <span className="mt-1 block text-[13px] opacity-75">{LAYER_QUESTION[l]}</span>
+              {LAYER_LABEL[l]}
+              {missing > 0 ? (
+                <span className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-[var(--missing)]"}`}>
+                  {missing} missing
+                </span>
+              ) : null}
             </button>
           );
         })}
       </div>
+      <p className="mb-5 text-sm text-ink-muted">{LAYER_QUESTION[layer]}</p>
 
       <ul key={layer} className="view-enter flex flex-col gap-2">
         {items
