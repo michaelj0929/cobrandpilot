@@ -262,7 +262,7 @@ function ReviewResult() {
                   {f.rule_statement ? (
                     <details className="mt-3 text-sm">
                       <summary className="cursor-pointer font-semibold text-brand hover:text-brand-deep">
-                        Rule this cites
+                        Rule this cites{f.rule_code ? ` · ${f.rule_code}` : ""}
                       </summary>
                       <p className="mt-2">{f.rule_statement}</p>
                       {f.source_citation ? (
