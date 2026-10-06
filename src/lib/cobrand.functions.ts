@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { categoryPrefix, layerOfCategory } from "./brand-layers";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAccess } from "./access.server";
@@ -57,6 +58,22 @@ function ruleLine(r: {
   return `${r.id} | ${r.layer} | ${r.rule_type} | ${r.label} | ${r.statement ?? ""} | ${value} | ${r.severity}${
     r.status ? ` | ${r.status}` : ""
   }`;
+}
+
+/** Next stable rule code for a category, e.g. LOGO-004. */
+async function nextRuleCode(brandId: string, category: string) {
+  const supabase = await db();
+  const prefix = categoryPrefix(category);
+  const { data } = await supabase
+    .from("rules")
+    .select("rule_code")
+    .eq("brand_id", brandId)
+    .like("rule_code", `${prefix}-%`);
+  const max = (data ?? []).reduce((m, r) => {
+    const n = Number((r.rule_code ?? "").split("-").pop());
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+  return `${prefix}-${String(max + 1).padStart(3, "0")}`;
 }
 
 export async function loadRuleLines(brandId: string) {
@@ -206,7 +223,9 @@ export const ingestSource = createServerFn({ method: "POST" })
           .insert({
             brand_id: source.brand_id,
             source_file_id: source.id,
-            layer: rule.layer,
+            layer: layerOfCategory(rule.category) === rule.layer ? rule.layer : layerOfCategory(rule.category),
+            category: rule.category,
+            rule_code: await nextRuleCode(source.brand_id, rule.category),
             rule_type: rule.rule_type,
             label: rule.label,
             statement: rule.statement,
@@ -218,6 +237,10 @@ export const ingestSource = createServerFn({ method: "POST" })
             review_state: rule.review_state,
             status: "proposed",
             confidence: rule.confidence,
+            confidence_score: Math.max(0, Math.min(1, rule.confidence_score)),
+            scope_tags: rule.scope_tags.length ? rule.scope_tags : ["global"],
+            source_document: rule.source_document,
+            source_page: rule.source_page,
             source_citation: rule.source_citation,
             source_evidence: rule.source_evidence,
             conflict_note: conflict?.note ?? null,
@@ -363,6 +386,8 @@ export const proposeForGap = createServerFn({ method: "POST" })
     await supabase.from("rules").insert({
       brand_id: gap.brand_id,
       layer: result.rule.layer,
+      category: result.rule.rule_type,
+      rule_code: await nextRuleCode(gap.brand_id, result.rule.rule_type),
       rule_type: result.rule.rule_type,
       label: result.rule.label,
       statement: result.rule.statement,
@@ -423,6 +448,8 @@ export const applyEdits = createServerFn({ method: "POST" })
         await supabase.from("rules").insert({
           brand_id: data.brandId,
           layer: change.layer,
+          category: change.rule_type,
+          rule_code: await nextRuleCode(data.brandId, change.rule_type),
           rule_type: change.rule_type,
           label: change.label,
           statement: change.new_value,
@@ -539,6 +566,8 @@ export const addManualRule = createServerFn({ method: "POST" })
     await supabase.from("rules").insert({
       brand_id: data.brandId,
       layer: data.layer,
+      category: data.ruleType,
+      rule_code: await nextRuleCode(data.brandId, data.ruleType),
       rule_type: data.ruleType,
       label: data.label,
       statement: data.statement,
