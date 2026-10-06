@@ -29,9 +29,11 @@ import {
   BRAND_KIND_LABEL,
   createSourceFromFile,
   createSourceFromText,
+  deleteSource,
   getBrand,
   listGaps,
   listSources,
+  replaceSource,
 } from "@/lib/cobrand-client";
 import { ingestSource, runGapCheck } from "@/lib/cobrand.functions";
 
@@ -176,11 +178,30 @@ function SourcesAndGaps() {
 
 
   const removeSource = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from("source_files").delete().eq("id", id);
+    mutationFn: async (source: SourceRow) => {
+      await deleteSource(source);
       refresh();
     },
   });
+
+  // Replace: swap one material for a new file, keep its document type, and
+  // read the new file straight into the brand system.
+  const replacing = useRef<SourceRow | null>(null);
+  const replaceInput = useRef<HTMLInputElement>(null);
+  const replaceSourceMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const old = replacing.current;
+      if (!old) return;
+      if (file.size > MAX_FILE_BYTES) throw new Error(`${file.name} is larger than 25 MB.`);
+      setError(null);
+      setBusy(`Replacing ${old.file_name}…`);
+      const newId = await replaceSource(brandId, old, file);
+      await processSource(newId, file.name);
+    },
+    onSettled: () => setBusy(null),
+    onError: (e) => setError((e as Error).message),
+  });
+
 
 
   // Real progress of the build: one step per document, then the gap check.
