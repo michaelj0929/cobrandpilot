@@ -5,6 +5,7 @@ import { PageHead } from "@/components/app-shell";
 import { BusyLine } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { listChecks, listReviewProjects } from "@/lib/cobrand-client";
+import { reviewVerdict } from "@/lib/review-status";
 
 export const Route = createFileRoute("/_authenticated/brands/$brandId/reviews")({
   head: () => ({
@@ -80,7 +81,9 @@ function PastReviews() {
                 </div>
               </div>
               <ul className="mt-4 text-sm">
-                {items.map((check) => (
+                {items.map((check) => {
+                  const verdict = reviewVerdict(check.score);
+                  return (
                   <li key={check.id} className="border-t border-line-soft">
                     <Link
                       to="/reviews/$checkId"
@@ -90,12 +93,14 @@ function PastReviews() {
                       <span className="truncate font-medium">
                         {check.asset_name ?? check.label ?? check.input_type}
                       </span>
-                      <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-brand-tint px-2.5 text-xs font-semibold text-brand">
-                        {check.score === null ? check.status : check.score}
+                      <span className={`inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${verdict.className}`}>
+                        <span className={`size-1.5 rounded-full ${verdict.dotClassName}`} aria-hidden />
+                        {verdict.label}
                       </span>
                     </Link>
                   </li>
-                ))}
+                  );
+                })}
                 {items.length === 0 ? (
                   <li className="border-t border-line-soft py-3 text-xs text-ink-muted">
                     No assets reviewed yet.
@@ -111,7 +116,9 @@ function PastReviews() {
             <h2>Earlier reviews</h2>
             <p className="mt-1 text-sm text-ink-muted">Reviewed before projects were added.</p>
             <ul className="mt-4 text-sm">
-              {loose.map((check) => (
+              {loose.map((check) => {
+                const verdict = reviewVerdict(check.score);
+                return (
                 <li key={check.id} className="border-t border-line-soft">
                   <Link
                     to="/reviews/$checkId"
@@ -121,12 +128,14 @@ function PastReviews() {
                     <span className="truncate font-medium">
                       {check.asset_name ?? check.label ?? check.input_type}
                     </span>
-                    <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-brand-tint px-2.5 text-xs font-semibold text-brand">
-                      {check.score === null ? check.status : check.score}
+                    <span className={`inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${verdict.className}`}>
+                      <span className={`size-1.5 rounded-full ${verdict.dotClassName}`} aria-hidden />
+                      {verdict.label}
                     </span>
                   </Link>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </section>
         ) : null}

@@ -7,8 +7,8 @@ import { Info } from "lucide-react";
 import { AppShell, StateBadge } from "@/components/app-shell";
 import { BusyLine } from "@/components/loading";
 import { Button } from "@/components/ui/button";
-import { Meter, ScoreRing } from "@/components/visuals";
 import { BRAND_KIND_LABEL, getCheck, listBrands, signedAssetUrl } from "@/lib/cobrand-client";
+import { averageScores, reviewVerdict } from "@/lib/review-status";
 
 export const Route = createFileRoute("/_authenticated/reviews/$checkId")({
   head: () => ({
@@ -28,14 +28,6 @@ export const Route = createFileRoute("/_authenticated/reviews/$checkId")({
   }),
   component: ReviewResult,
 });
-
-const DIMENSIONS: Record<string, string> = {
-  recognition: "Brand recognition",
-  layout: "Layout & clarity",
-  messaging: "Messaging",
-  channel_fit: "Channel fit",
-  campaign_fit: "Campaign fit",
-};
 
 function ReviewResult() {
   const { checkId } = useParams({ from: "/_authenticated/reviews/$checkId" });
@@ -82,6 +74,17 @@ function ReviewResult() {
   }
 
   const reviewedBrandId = check.data.brand_id;
+  const overallVerdict = reviewVerdict(check.data.score);
+  const dimensions = [
+    {
+      label: "Brand Compliant",
+      verdict: reviewVerdict(
+        averageScores(scores.recognition, scores.channel_fit, scores.campaign_fit),
+      ),
+    },
+    { label: "Copy", verdict: reviewVerdict(scores.messaging) },
+    { label: "Layout", verdict: reviewVerdict(scores.layout) },
+  ];
 
   return (
     <AppShell
@@ -114,14 +117,10 @@ function ReviewResult() {
             ))}
           </p>
         </div>
-        <section className="flex items-center gap-4 rounded-lg bg-brand-tint px-6 py-[18px]">
-          <ScoreRing value={check.data.score ?? 0} size={84} />
-          <div>
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brand score</h2>
-            <p className="max-w-[9rem] text-[13px] leading-5 font-semibold text-brand">
-              {check.data.label ?? check.data.status}
-            </p>
-          </div>
+        <section className={`max-w-sm rounded-md border px-5 py-4 ${overallVerdict.className}`}>
+          <p className="text-xs font-semibold uppercase">Overall result</p>
+          <h2 className="mt-1 text-lg leading-6">{overallVerdict.label}</h2>
+          <p className="mt-1 text-xs leading-5 opacity-80">{overallVerdict.description}</p>
         </section>
       </div>
 
@@ -131,14 +130,14 @@ function ReviewResult() {
         </p>
       ) : null}
 
-      <section className="surface grid gap-6 px-6 py-[22px] sm:grid-cols-5">
-        {Object.entries(DIMENSIONS).map(([key, label]) => (
-          <div key={key} className="flex flex-col gap-1">
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px] text-ink-muted">{label}</h2>
-            <p className="text-[30px] leading-[38px] font-semibold tracking-[-0.2px]">
-              {scores[key] ?? "—"}
+      <section className="surface grid gap-px overflow-hidden bg-line-soft sm:grid-cols-3">
+        {dimensions.map(({ label, verdict }) => (
+          <div key={label} className="flex min-h-28 flex-col justify-between bg-card px-6 py-5">
+            <h2 className="text-[13px] leading-[18px] text-ink-muted">{label}</h2>
+            <p className="mt-4 flex items-center gap-2 text-sm font-semibold">
+              <span className={`size-2 shrink-0 rounded-full ${verdict.dotClassName}`} aria-hidden />
+              {verdict.label}
             </p>
-            <Meter value={scores[key] ?? 0} />
           </div>
         ))}
       </section>
@@ -224,12 +223,12 @@ function ReviewResult() {
             {issues.length} {issues.length === 1 ? "issue" : "issues"} to fix
           </h2>
           {issues.map((f) => (
-            <article
+            <details
               key={f.id}
-              className="surface px-6 py-5"
+              className="surface group px-6 py-5"
               onMouseEnter={() => setActivePin(f.number)}
             >
-              <div className="flex items-start gap-3">
+              <summary className="flex cursor-pointer list-none items-start gap-3 marker:content-none">
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-attention text-xs font-semibold text-ink">
                   {f.number}
                 </span>
@@ -244,6 +243,13 @@ function ReviewResult() {
                   <p className="mt-1 text-xs text-ink-muted">
                     {f.pass_name} · {f.confidence} confidence
                   </p>
+                </div>
+                <span className="mt-1 text-lg leading-none text-ink-muted transition-transform group-open:rotate-45" aria-hidden>
+                  +
+                </span>
+              </summary>
+              <div className="ml-10 mt-4 border-t border-line-soft pt-4">
+                  <h4 className="text-xs font-semibold uppercase text-ink-muted">What was flagged</h4>
                   <p className="mt-2.5 text-sm">{f.explanation}</p>
                   {f.why_it_matters ? (
                     <p className="mt-1.5 text-sm text-ink-muted">{f.why_it_matters}</p>
@@ -260,10 +266,10 @@ function ReviewResult() {
                     </p>
                   ) : null}
                   {f.rule_statement ? (
-                    <details className="mt-3 text-sm">
-                      <summary className="cursor-pointer font-semibold text-brand hover:text-brand-deep">
-                        Rule this cites{f.rule_code ? ` · ${f.rule_code}` : ""}
-                      </summary>
+                    <div className="mt-3 border-t border-line-soft pt-3 text-sm">
+                      <p className="font-semibold text-brand">
+                        Brand guideline cited{f.rule_code ? ` · ${f.rule_code}` : ""}
+                      </p>
                       <p className="mt-2">{f.rule_statement}</p>
                       {f.source_citation ? (
                         <p className="mt-1 text-xs text-ink-muted">{f.source_citation}</p>
@@ -273,11 +279,10 @@ function ReviewResult() {
                           Applies here because {f.applies_because}
                         </p>
                       ) : null}
-                    </details>
+                    </div>
                   ) : null}
-                </div>
               </div>
-            </article>
+            </details>
           ))}
 
           <Button asChild variant="secondary" className="self-start">
