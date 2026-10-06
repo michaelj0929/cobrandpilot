@@ -136,16 +136,12 @@ function BrandBrain() {
           {...(brand.data ? { eyebrow: BRAND_KIND_LABEL[brand.data.kind] } : {})}
           title={`${brand.data?.name ?? ""} guidelines`}
           description={`Rules that only apply to ${brand.data?.name ?? "this sub-brand"}. Checks that select it use these on top of the ${master.data?.name ?? "master brand"} brand system; ${master.data?.name ?? "master brand"} Must rules still win.`}
-          actions={statusBlock}
-          actionsAlign="start"
         />
       ) : (
         <PageHead
           eyebrow="Master brand"
           title="Your brand system"
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
-          actions={statusBlock}
-          actionsAlign="start"
         />
       )}
       <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing" />
@@ -181,7 +177,7 @@ function BrandBrain() {
       </div>
       <p className="mb-7 text-sm text-ink-muted">{LAYER_QUESTION[layer]}</p>
 
-      <div className="grid items-start gap-6">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_300px]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="max-w-xl text-sm text-ink-muted">{LAYER_BLURB[layer]}</p>
@@ -287,6 +283,7 @@ function BrandBrain() {
             )}
           </div>
         </div>
+        <aside className="lg:sticky lg:top-8">{statusBlock}</aside>
       </div>
 
       <section className="surface mt-10 px-6 py-[22px]">
