@@ -6,6 +6,7 @@ import { ArrowRight, LayoutGrid, Upload } from "lucide-react";
 
 import { AppShell, Empty, PageHead, SectionHead } from "@/components/app-shell";
 import { Meter, ScoreRing } from "@/components/visuals";
+import { SubBrandActions } from "@/components/sub-brands";
 import { Button } from "@/components/ui/button";
 import { CreatableCombobox } from "@/components/ui/creatable-combobox";
 import { Input } from "@/components/ui/input";
@@ -337,6 +338,9 @@ function BrandCard({ brand }: { brand: Brand }) {
             {brand.kind === "master" ? "Brand system" : "Guidelines"}
           </Link>
         </Button>
+        {brand.kind !== "master" ? (
+          <SubBrandActions sub={brand} masterId={brand.parent_brand_id ?? brand.id} />
+        ) : null}
       </div>
     </div>
   );

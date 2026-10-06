@@ -280,16 +280,16 @@ function ReviewIntake() {
         description="Submit a brief, copy or a visual asset and CoBrand reviews it against the brand model in context."
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_1fr]">
-        <div className="flex flex-col gap-5">
-          <section className="surface px-6 py-[22px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <section className="surface flex flex-1 flex-col px-6 py-[22px]">
             <h2>Project Details</h2>
             <p className="mt-1 text-sm text-ink-muted">
               Group every asset for one piece of work under a single review. All fields marked * are
               required.
             </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-1.5 sm:col-span-2">
+            <div className="mt-5 grid flex-1 content-between gap-4">
+              <div className="grid gap-1.5">
                 <Label htmlFor="title">Project Title *</Label>
                 <Input
                   id="title"
@@ -307,7 +307,7 @@ function ReviewIntake() {
                 <Label htmlFor="deadline">Deadline</Label>
                 <Input id="deadline" type="date" value={deadline} min={reviewDate} disabled={!!projectId} onChange={(e) => setDeadline(e.target.value)} />
               </div>
-              <div className="grid gap-1.5 sm:col-span-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="creating">What are you creating? *</Label>
                 <CreatableCombobox id="creating" value={creating} onValueChange={setCreating} options={CREATIVE_TYPES} placeholder="Select or type a format" searchPlaceholder="Search or add a format…" />
               </div>
@@ -363,7 +363,7 @@ function ReviewIntake() {
             ) : null}
           </section>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="mt-auto flex flex-wrap gap-3">
             <Button disabled={!hasInput || !!busy} onClick={() => submit.mutate()}>
               {busy ? busy : "Review Creative"}
             </Button>
@@ -379,8 +379,8 @@ function ReviewIntake() {
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
 
-        <aside className="flex flex-col gap-5">
-          <section className="surface px-6 py-[22px]">
+        <aside className="flex min-w-0 flex-col gap-5">
+          <section className="surface flex flex-1 flex-col px-6 py-[22px]">
             <h2>Upload Files</h2>
             <p className="mt-1 text-sm text-ink-muted">
               Add a creative brief, copy, creative files, or any combination of the three.
@@ -456,6 +456,7 @@ function ReviewIntake() {
               <Textarea
                 id="copy"
                 rows={4}
+                className="flex-1"
                 placeholder="Optional: paste a headline, body copy, CTA, or notes…"
                 value={copy}
                 onChange={(e) => setCopy(e.target.value)}

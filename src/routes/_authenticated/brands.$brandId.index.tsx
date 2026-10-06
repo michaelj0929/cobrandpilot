@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import {
   ACCEPTED_TYPES,
   MAX_FILES_PER_PASS,
@@ -29,15 +28,20 @@ import {
   BRAND_KIND_LABEL,
   createSourceFromFile,
   createSourceFromText,
+  deleteSource,
   getBrand,
   listGaps,
   listSources,
+  replaceSource,
 } from "@/lib/cobrand-client";
 import { ingestSource, runGapCheck } from "@/lib/cobrand.functions";
 
 export const Route = createFileRoute("/_authenticated/brands/$brandId/")({
   component: SourcesAndGaps,
 });
+
+type SourceRow = Awaited<ReturnType<typeof listSources>>[number];
+
 
 const CLASSIFICATIONS = [
   "Master Brand Guideline",
@@ -176,11 +180,30 @@ function SourcesAndGaps() {
 
 
   const removeSource = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from("source_files").delete().eq("id", id);
+    mutationFn: async (source: SourceRow) => {
+      await deleteSource(source);
       refresh();
     },
   });
+
+  // Replace: swap one material for a new file, keep its document type, and
+  // read the new file straight into the brand system.
+  const replacing = useRef<SourceRow | null>(null);
+  const replaceInput = useRef<HTMLInputElement>(null);
+  const replaceSourceMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const old = replacing.current;
+      if (!old) return;
+      if (file.size > MAX_FILE_BYTES) throw new Error(`${file.name} is larger than 25 MB.`);
+      setError(null);
+      setBusy(`Replacing ${old.file_name}…`);
+      const newId = await replaceSource(brandId, old, file);
+      await processSource(newId, file.name);
+    },
+    onSettled: () => setBusy(null),
+    onError: (e) => setError((e as Error).message),
+  });
+
 
 
   // Real progress of the build: one step per document, then the gap check.
@@ -245,6 +268,17 @@ function SourcesAndGaps() {
               className="hidden"
               onChange={(e) => {
                 if (e.target.files?.length) upload.mutate(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <input
+              ref={replaceInput}
+              type="file"
+              accept={ACCEPTED_TYPES}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) replaceSourceMutation.mutate(file);
                 e.target.value = "";
               }}
             />
@@ -346,7 +380,19 @@ function SourcesAndGaps() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => removeSource.mutate(source.id)}
+                        disabled={!!busy || source.kind === "text"}
+                        onClick={() => {
+                          replacing.current = source;
+                          replaceInput.current?.click();
+                        }}
+                      >
+                        Replace
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={!!busy}
+                        onClick={() => removeSource.mutate(source)}
                       >
                         Remove
                       </Button>
