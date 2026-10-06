@@ -144,41 +144,45 @@ function BrandBrain() {
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
         />
       )}
-      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
-
-      <div
-        role="tablist"
-        aria-label="Brand layers"
-        className="mb-2 flex flex-wrap items-center gap-2"
-      >
-        {LAYERS.map((l) => {
-          const count = (rules.data ?? []).filter(
-            (r) => r.layer === l && r.status !== "archived",
-          ).length;
-          return (
-            <button
-              key={l}
-              role="tab"
-              aria-selected={layer === l}
-              onClick={() => setLayer(l)}
-              className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-                layer === l
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-line-soft bg-card text-ink hover:bg-brand-tint/40"
-              }`}
-            >
-              {LAYER_LABEL[l]}
-              <span className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-ink-muted"}`}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      <p className="mb-7 text-sm text-ink-muted">{LAYER_QUESTION[layer]}</p>
-
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_300px]">
         <div className="flex min-w-0 flex-col gap-5">
+          <div>
+            <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
+
+            <div
+              role="tablist"
+              aria-label="Brand layers"
+              className="mb-2 flex flex-wrap items-center gap-2"
+            >
+              {LAYERS.map((l) => {
+                const count = (rules.data ?? []).filter(
+                  (r) => r.layer === l && r.status !== "archived",
+                ).length;
+                return (
+                  <button
+                    key={l}
+                    role="tab"
+                    aria-selected={layer === l}
+                    onClick={() => setLayer(l)}
+                    className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                      layer === l
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-line-soft bg-card text-ink hover:bg-brand-tint/40"
+                    }`}
+                  >
+                    {LAYER_LABEL[l]}
+                    <span
+                      className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-ink-muted"}`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-sm text-ink-muted">{LAYER_QUESTION[layer]}</p>
+          </div>
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="max-w-xl text-sm text-ink-muted">{LAYER_BLURB[layer]}</p>
             <div className="ml-auto w-44">
