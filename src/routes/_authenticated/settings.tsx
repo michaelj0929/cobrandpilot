@@ -8,7 +8,8 @@ import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { listWorkspaces, renameWorkspace } from "@/lib/cobrand-client";
+import { getBrandFamily, listWorkspaces, renameWorkspace } from "@/lib/cobrand-client";
+import { SubBrandActions } from "@/components/sub-brands";
 import { displayName, useAuthUser } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -72,16 +73,51 @@ function WorkspaceRow({ id, name }: { id: string; name: string }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
   });
   return (
-    <li className="flex items-center gap-3 border-t border-line-soft py-3 first:border-t-0">
-      <Input value={value} onChange={(e) => setValue(e.target.value)} className="max-w-sm" />
-      <Button
-        size="sm"
-        variant="secondary"
-        disabled={!value.trim() || value === name || save.isPending}
-        onClick={() => save.mutate()}
-      >
-        {save.isSuccess && value === name ? "Saved" : "Save"}
-      </Button>
+    <li className="border-t border-line-soft py-3 first:border-t-0">
+      <div className="flex items-center gap-3">
+        <Input value={value} onChange={(e) => setValue(e.target.value)} className="max-w-sm" />
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={!value.trim() || value === name || save.isPending}
+          onClick={() => save.mutate()}
+        >
+          {save.isSuccess && value === name ? "Saved" : "Save"}
+        </Button>
+      </div>
+      <WorkspaceSubBrands workspaceId={id} />
     </li>
+  );
+}
+
+function WorkspaceSubBrands({ workspaceId }: { workspaceId: string }) {
+  const family = useQuery({
+    queryKey: ["brand-family", workspaceId],
+    queryFn: () => getBrandFamily(workspaceId),
+  });
+  const master = family.data?.master;
+  const subs = family.data?.subBrands ?? [];
+  if (!master) return null;
+  return (
+    <div className="mt-3 pl-1">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">
+        Sub-Brands and Product Lines
+      </p>
+      {subs.length === 0 ? (
+        <p className="text-sm text-ink-muted">None yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {subs.map((sub) => (
+            <li
+              key={sub.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line-soft px-3 py-2"
+            >
+              <span className="text-sm font-medium">{sub.name}</span>
+              <SubBrandActions sub={sub} masterId={master.id} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
