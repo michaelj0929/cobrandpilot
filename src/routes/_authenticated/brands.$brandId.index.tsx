@@ -381,7 +381,19 @@ function SourcesAndGaps() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => removeSource.mutate(source.id)}
+                        disabled={!!busy || source.kind === "text"}
+                        onClick={() => {
+                          replacing.current = source;
+                          replaceInput.current?.click();
+                        }}
+                      >
+                        Replace
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={!!busy}
+                        onClick={() => removeSource.mutate(source)}
                       >
                         Remove
                       </Button>
