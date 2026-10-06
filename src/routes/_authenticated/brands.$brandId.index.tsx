@@ -438,99 +438,11 @@ function SourcesAndGaps() {
             <section className="rounded-lg bg-sky-tint px-6 py-[22px]">
               <h2>Built on {masterName}</h2>
               <p className="mt-1.5 text-sm">
-                The master brand covers the essentials (purpose, logo, colour, voice), so a{" "}
-                {brand.data ? BRAND_KIND_LABEL[brand.data.kind].toLowerCase() : "sub-brand"} has no
-                setup gaps of its own. Anything here that contradicts a confirmed {masterName} rule
-                is flagged in its Brand System.
+                Anything here that contradicts a confirmed {masterName} rule is flagged in its
+                Brand System.
               </p>
             </section>
-          ) : (
-            <div>
-              <SectionHead
-                title="Setup gaps"
-                description="What the brand model is missing or too vague about. These stay visible until they are answered — CoBrand will not guess."
-                actions={
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={!!busy}
-                    onClick={() => recheck.mutate()}
-                  >
-                    Re-check
-                  </Button>
-                }
-              />
-
-              <div className="flex flex-col gap-3">
-                {openGaps.length === 0 ? (
-                  <Empty
-                    title="Nothing outstanding"
-                    body="Once materials are ingested, anything missing or vague appears here."
-                  />
-                ) : (
-                  openGaps.map((gap) => (
-                    <div key={gap.id} className="surface px-6 py-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-semibold">{gap.topic}</p>
-                        <StateBadge state={gap.gap_type} />
-                      </div>
-                      {gap.why_it_matters ? (
-                        <p className="mt-1.5 text-sm text-ink-muted">{gap.why_it_matters}</p>
-                      ) : null}
-                      {gap.source_note ? (
-                        <p className="mt-1.5 text-xs text-ink-muted">{gap.source_note}</p>
-                      ) : null}
-
-                      {answering === gap.id ? (
-                        <div className="mt-3">
-                          <Textarea
-                            rows={3}
-                            autoFocus
-                            placeholder="Write the answer in your own words…"
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                          />
-                          <div className="mt-3 flex gap-2">
-                            <Button
-                              size="sm"
-                              disabled={!!busy || answer.trim().length < 3}
-                              onClick={() => answerGap.mutate(gap)}
-                            >
-                              Save as brand truth
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setAnswering(null)}>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="mt-3.5 flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => {
-                              setAnswering(gap.id);
-                              setAnswer("");
-                            }}
-                          >
-                            Answer it
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="quiet"
-                            disabled={!!busy}
-                            onClick={() => proposeFor.mutate(gap.id)}
-                          >
-                            Let CoBrand propose
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+          ) : null}
         </section>
       </div>
 
