@@ -2,13 +2,13 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { Info } from "lucide-react";
+import { Check, ChevronDown, Info, TriangleAlert, X } from "lucide-react";
 
 import { AppShell, StateBadge } from "@/components/app-shell";
 import { BusyLine } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { BRAND_KIND_LABEL, getCheck, listBrands, signedAssetUrl } from "@/lib/cobrand-client";
-import { averageScores, reviewVerdict } from "@/lib/review-status";
+import { averageScores, reviewVerdict, type ReviewVerdictKey } from "@/lib/review-status";
 
 export const Route = createFileRoute("/_authenticated/reviews/$checkId")({
   head: () => ({
@@ -30,6 +30,25 @@ export const Route = createFileRoute("/_authenticated/reviews/$checkId")({
   }),
   component: ReviewResult,
 });
+
+function VerdictPill({
+  verdict,
+  className = "",
+}: {
+  verdict: { label: string; icon: ReviewVerdictKey; className: string };
+  className?: string;
+}) {
+  const Icon = verdict.icon === "pass" ? Check : verdict.icon === "revise" ? TriangleAlert : X;
+  return (
+    <span
+      className={`inline-flex min-h-7 w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-[13px] font-semibold ${verdict.className} ${className}`}
+    >
+      <Icon aria-hidden className="size-3.5 shrink-0" />
+      {verdict.label}
+    </span>
+  );
+}
+
 
 function ReviewResult() {
   const { checkId } = useParams({ from: "/_authenticated/reviews/$checkId" });
