@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 
 import { Hammer, Upload } from "lucide-react";
 
-import { Empty, PageHead, SectionHead, StateBadge } from "@/components/app-shell";
+import { Empty, PageHead } from "@/components/app-shell";
 import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
 import { SubBrandsPanel } from "@/components/sub-brands";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ import {
   listGaps,
   listSources,
 } from "@/lib/cobrand-client";
-import { ingestSource, proposeForGap, runGapCheck, addManualRule } from "@/lib/cobrand.functions";
+import { ingestSource, runGapCheck } from "@/lib/cobrand.functions";
 
 export const Route = createFileRoute("/_authenticated/brands/$brandId/")({
   component: SourcesAndGaps,
@@ -57,16 +57,12 @@ function SourcesAndGaps() {
 
   const ingest = useServerFn(ingestSource);
   const gapCheck = useServerFn(runGapCheck);
-  const propose = useServerFn(proposeForGap);
-  const addRule = useServerFn(addManualRule);
 
   const [classification, setClassification] = useState<string>("");
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [answering, setAnswering] = useState<string | null>(null);
-  const [answer, setAnswer] = useState("");
 
   const sources = useQuery({
     queryKey: ["sources", brandId],
@@ -177,42 +173,8 @@ function SourcesAndGaps() {
     onError: (e) => setError((e as Error).message),
   });
 
-  const recheck = useMutation({
-    mutationFn: async () => {
-      setBusy("Checking the model for gaps…");
-      await gapCheck({ data: { brandId } });
-      refresh();
-    },
-    onSettled: () => setBusy(null),
-    onError: (e) => setError((e as Error).message),
-  });
 
-  const proposeFor = useMutation({
-    mutationFn: async (gapId: string) => {
-      setBusy("Drafting a candidate rule…");
-      const result = await propose({ data: { gapId } });
-      refresh();
-      if (!result.proposed) setError(result.reason);
-    },
-    onSettled: () => setBusy(null),
-    onError: (e) => setError((e as Error).message),
-  });
 
-  const answerGap = useMutation({
-    mutationFn: async (gap: { id: string; topic: string; layer: string | null }) => {
-      setBusy("Saving…");
-      await addRule({
-        data: {
-          brandId,
-          gapId: gap.id,
-          layer: gap.layer ?? "identity",
-          ruleType: "other",
-          label: gap.topic,
-          statement: answer.trim(),
-          value: "",
-          severity: "must",
-        },
-      });
       setAnswering(null);
       setAnswer("");
       refresh();
@@ -228,7 +190,6 @@ function SourcesAndGaps() {
     },
   });
 
-  const openGaps = (gaps.data ?? []).filter((g) => !g.resolved);
 
   // Real progress of the build: one step per document, then the gap check.
   const buildSteps: Step[] = build
