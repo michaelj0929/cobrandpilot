@@ -555,7 +555,9 @@ export type Database = {
           asset_path: string | null
           brand_id: string
           brand_model_version: number
+          brief_files: Json
           brief_text: string | null
+          copy_files: Json
           copy_text: string | null
           created_at: string
           creative_context: Json
@@ -579,7 +581,9 @@ export type Database = {
           asset_path?: string | null
           brand_id: string
           brand_model_version?: number
+          brief_files?: Json
           brief_text?: string | null
+          copy_files?: Json
           copy_text?: string | null
           created_at?: string
           creative_context?: Json
@@ -603,7 +607,9 @@ export type Database = {
           asset_path?: string | null
           brand_id?: string
           brand_model_version?: number
+          brief_files?: Json
           brief_text?: string | null
+          copy_files?: Json
           copy_text?: string | null
           created_at?: string
           creative_context?: Json

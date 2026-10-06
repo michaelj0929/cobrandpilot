@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import {
   AUDIENCES,
+  ACCEPTED_TYPES,
   BRAND_KIND_LABEL,
   CREATIVE_TYPES,
   MAX_FILE_BYTES,
@@ -22,7 +23,6 @@ import {
   getBrandFamilyOf,
   uploadToBucket,
 } from "@/lib/cobrand-client";
-import { readBrief } from "@/lib/cobrand.functions";
 import { checkReadiness, runReview } from "@/lib/review.functions";
 
 export const Route = createFileRoute("/_authenticated/brands/$brandId/review")({
@@ -31,13 +31,13 @@ export const Route = createFileRoute("/_authenticated/brands/$brandId/review")({
     typeof search["with"] === "string" ? { with: search["with"] } : {},
   head: () => ({
     meta: [
-      { title: "Review creative — CoBrand" },
+      { title: "Creative Review — CoBrand" },
       {
         name: "description",
         content:
           "Submit a brief, copy or a visual asset and CoBrand reviews it against the brand model in context.",
       },
-      { property: "og:title", content: "Review creative — CoBrand" },
+      { property: "og:title", content: "Creative Review — CoBrand" },
       {
         property: "og:description",
         content: "Submit a brief, copy or an asset and review it against the brand model.",
@@ -56,24 +56,27 @@ type Readiness = {
   cannot_do: string;
 };
 
-const FIELDS = [
-  { key: "market", label: "Market", placeholder: "UK, DACH…" },
-  { key: "product", label: "Product", placeholder: "which product or service" },
-  { key: "campaign", label: "Campaign", placeholder: "campaign name, if any" },
-] as const;
+type UploadedFile = { path: string; name: string; mime: string };
 
 function ReviewIntake() {
   const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/review" });
   const search = Route.useSearch();
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
+  const briefFileInput = useRef<HTMLInputElement>(null);
+  const copyFileInput = useRef<HTMLInputElement>(null);
+  const uploadedSupportingFiles = useRef<{
+    brief: UploadedFile[];
+    copy: UploadedFile[];
+  } | null>(null);
 
-  const prefill = useServerFn(readBrief);
   const readiness = useServerFn(checkReadiness);
   const review = useServerFn(runReview);
 
   const [brief, setBrief] = useState("");
   const [copy, setCopy] = useState("");
+  const [briefFiles, setBriefFiles] = useState<File[]>([]);
+  const [copyFiles, setCopyFiles] = useState<File[]>([]);
   const [assets, setAssets] = useState<File[]>([]);
   const asset = assets[0] ?? null;
   const today = new Date().toISOString().slice(0, 10);
@@ -85,8 +88,6 @@ function ReviewIntake() {
   const [audience, setAudience] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
   const projectReady = !!title.trim() && !!reviewDate && !!creating && !!objective && !!audience;
-  const [context, setContext] = useState<Record<string, string>>({});
-  const [keyMessage, setKeyMessage] = useState("");
   const [checkId, setCheckId] = useState<string | null>(null);
   const [report, setReport] = useState<Readiness | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -125,29 +126,29 @@ function ReviewIntake() {
     setReport(null);
   };
 
-  const set = (key: string, value: string) => setContext((c) => ({ ...c, [key]: value }));
-
-  const readTheBrief = useMutation({
-    mutationFn: async () => {
-      setBusy("Reading the brief…");
-      const result = await prefill({ data: { brief } });
-      const picked = Object.fromEntries(
-        Object.entries(result).filter(([k, v]) => v && k !== "key_message") as [string, string][],
-      );
-      if (picked["format"] && !creating) setCreating(picked["format"]);
-      if (picked["objective"] && !objective) setObjective(picked["objective"]);
-      if (picked["audience"] && !audience) setAudience(picked["audience"]);
-      delete picked["format"];
-      delete picked["objective"];
-      delete picked["audience"];
-      setContext((c) => ({ ...c, ...picked }));
-      if (result.key_message) setKeyMessage(result.key_message);
-    },
-    onSettled: () => setBusy(null),
-    onError: (e) => setError((e as Error).message),
-  });
-
   const subBrandIds = selectedSubs.filter((id) => subBrands.some((b) => b.id === id));
+
+  const uploadSupportingFiles = async () => {
+    if (uploadedSupportingFiles.current) return uploadedSupportingFiles.current;
+    const upload = async (files: File[]) =>
+      Promise.all(
+        files.map(async (file) => {
+          if (file.size > MAX_FILE_BYTES) throw new Error(`${file.name} is larger than 25 MB.`);
+          return {
+            path: await uploadToBucket("creatives", brandId, file),
+            name: file.name,
+            mime: file.type || "application/octet-stream",
+          };
+        }),
+      );
+    if (briefFiles.length || copyFiles.length) setBusy("Uploading supporting files…");
+    const uploaded = {
+      brief: await upload(briefFiles),
+      copy: await upload(copyFiles),
+    };
+    uploadedSupportingFiles.current = uploaded;
+    return uploaded;
+  };
 
   const ensureProject = async () => {
     if (projectId) return projectId;
@@ -171,6 +172,7 @@ function ReviewIntake() {
 
   const createCheck = async (asset: File | null = assets[0] ?? null) => {
     const project = await ensureProject();
+    const supporting = await uploadSupportingFiles();
     let assetPath: string | null = null;
     if (asset) {
       if (asset.size > MAX_FILE_BYTES) throw new Error("That file is larger than 25 MB.");
@@ -189,16 +191,16 @@ function ReviewIntake() {
       input_type: inputType,
       brief_text: brief.trim() || null,
       copy_text: copy.trim() || null,
+      brief_files: supporting.brief,
+      copy_files: supporting.copy,
       asset_path: assetPath,
       asset_name: asset?.name ?? null,
       asset_mime: asset?.type ?? null,
       project_id: project,
       creative_context: {
-        ...context,
         format: creating,
         objective,
         audience,
-        ...(keyMessage ? { key_message: keyMessage } : {}),
       },
       status: "draft",
       // From migration 20261002230000; cast until types regenerate. Only sent
@@ -249,7 +251,12 @@ function ReviewIntake() {
   });
 
   const hasInput =
-    projectReady && (brief.trim().length > 10 || copy.trim().length > 5 || assets.length > 0);
+    projectReady &&
+    (brief.trim().length > 10 ||
+      copy.trim().length > 5 ||
+      briefFiles.length > 0 ||
+      copyFiles.length > 0 ||
+      assets.length > 0);
 
   // Real steps of the running flow, read from the busy message.
   const running = submit.isPending || assess.isPending;
@@ -268,21 +275,21 @@ function ReviewIntake() {
   return (
     <>
       <PageHead
-        title="Review creative"
+        title="Creative Review"
         description="Submit a brief, copy or a visual asset and CoBrand reviews it against the brand model in context."
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr]">
         <div className="flex flex-col gap-5">
           <section className="surface px-6 py-[22px]">
-            <h2>Review project</h2>
+            <h2>Project Details</h2>
             <p className="mt-1 text-sm text-ink-muted">
               Group every asset for one piece of work under a single review. All fields marked * are
               required.
             </p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5 sm:col-span-2">
-                <Label htmlFor="title">Review title *</Label>
+                <Label htmlFor="title">Project Title *</Label>
                 <Input
                   id="title"
                   placeholder="e.g. Spring launch — paid social"
@@ -315,48 +322,93 @@ function ReviewIntake() {
           </section>
 
           <section className="surface px-6 py-[22px]">
-            <h2>What are you reviewing?</h2>
+            <h2>Upload Files</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              A brief, copy, a visual asset, or all three. CoBrand reviews whatever it is given.
+              Add a creative brief, copy, creative files, or any combination of the three.
             </p>
 
             <div className="mt-5 grid gap-1.5">
               <Label htmlFor="brief">Creative brief</Label>
+              <input
+                ref={briefFileInput}
+                type="file"
+                accept={ACCEPTED_TYPES}
+                className="hidden"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length) setBriefFiles((current) => [...current, ...files]);
+                  uploadedSupportingFiles.current = null;
+                  e.target.value = "";
+                  setCheckId(null);
+                  setReport(null);
+                }}
+              />
+              <FilePicker
+                files={briefFiles}
+                onChoose={() => briefFileInput.current?.click()}
+                onRemove={(index) => {
+                  setBriefFiles((current) => current.filter((_, i) => i !== index));
+                  uploadedSupportingFiles.current = null;
+                  setCheckId(null);
+                  setReport(null);
+                }}
+                emptyLabel="PDF, PowerPoint, Word, CSV, Figma exports or images"
+                busy={!!busy}
+              />
               <Textarea
                 id="brief"
                 rows={5}
-                placeholder="Paste the brief, or describe what this creative is meant to do…"
+                placeholder="Optional: paste the brief or add notes…"
                 value={brief}
                 onChange={(e) => setBrief(e.target.value)}
               />
-              <Button
-                variant="link"
-                size="sm"
-                className="justify-self-start px-0"
-                disabled={!!busy || brief.trim().length < 20}
-                onClick={() => readTheBrief.mutate()}
-              >
-                Pull the context out of this brief
-              </Button>
             </div>
 
-            <div className="mt-3 grid gap-1.5">
+            <div className="mt-5 grid gap-1.5">
               <Label htmlFor="copy">Copy</Label>
+              <input
+                ref={copyFileInput}
+                type="file"
+                accept={ACCEPTED_TYPES}
+                className="hidden"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length) setCopyFiles((current) => [...current, ...files]);
+                  uploadedSupportingFiles.current = null;
+                  e.target.value = "";
+                  setCheckId(null);
+                  setReport(null);
+                }}
+              />
+              <FilePicker
+                files={copyFiles}
+                onChoose={() => copyFileInput.current?.click()}
+                onRemove={(index) => {
+                  setCopyFiles((current) => current.filter((_, i) => i !== index));
+                  uploadedSupportingFiles.current = null;
+                  setCheckId(null);
+                  setReport(null);
+                }}
+                emptyLabel="PDF, PowerPoint, Word, CSV, Figma exports or images"
+                busy={!!busy}
+              />
               <Textarea
                 id="copy"
                 rows={4}
-                placeholder="Headline, body, CTA…"
+                placeholder="Optional: paste a headline, body copy, CTA, or notes…"
                 value={copy}
                 onChange={(e) => setCopy(e.target.value)}
               />
             </div>
 
             <div className="mt-5">
-              <Label>Visual asset</Label>
+              <Label>Creative files</Label>
               <input
                 ref={fileInput}
                 type="file"
-                accept=".png,.jpg,.jpeg,.webp,.svg,.pdf"
+                accept={ACCEPTED_TYPES}
                 className="hidden"
                 multiple
                 onChange={(e) => {
@@ -374,7 +426,7 @@ function ReviewIntake() {
                 <span className="min-w-0 truncate text-sm text-ink-muted">
                   {assets.length
                     ? `${assets.length} ${assets.length === 1 ? "asset" : "assets"} in this review`
-                    : "PNG, JPG, WEBP, SVG or PDF — add as many as belong to this review"}
+                    : "For example: PDF, PowerPoint, Word, CSV, Figma exports, images or logos"}
                 </span>
               </div>
               {assets.length ? (
@@ -443,37 +495,9 @@ function ReviewIntake() {
             ) : null}
           </section>
 
-          <section className="surface px-6 py-[22px]">
-            <h2>Context</h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              Optional, but it decides which rules apply. Leave anything you don't know blank.
-            </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {FIELDS.map((field) => (
-                <div key={field.key} className="grid gap-1.5">
-                  <Label htmlFor={field.key}>{field.label}</Label>
-                  <Input
-                    id={field.key}
-                    placeholder={field.placeholder}
-                    value={context[field.key] ?? ""}
-                    onChange={(e) => set(field.key, e.target.value)}
-                  />
-                </div>
-              ))}
-              <div className="grid gap-1.5 sm:col-span-2">
-                <Label htmlFor="key_message">Key message</Label>
-                <Input
-                  id="key_message"
-                  value={keyMessage}
-                  onChange={(e) => setKeyMessage(e.target.value)}
-                />
-              </div>
-            </div>
-          </section>
-
           <div className="flex flex-wrap gap-3">
             <Button disabled={!hasInput || !!busy} onClick={() => submit.mutate()}>
-              {busy ? busy : "Review creative"}
+              {busy ? busy : "Review Creative"}
             </Button>
             <Button
               variant="secondary"
@@ -535,5 +559,55 @@ function ReviewIntake() {
         </aside>
       </div>
     </>
+  );
+}
+
+function FilePicker({
+  files,
+  onChoose,
+  onRemove,
+  emptyLabel,
+  busy,
+}: {
+  files: File[];
+  onChoose: () => void;
+  onRemove: (index: number) => void;
+  emptyLabel: string;
+  busy: boolean;
+}) {
+  return (
+    <div className="rounded-md border-[1.5px] border-dashed border-brand-soft px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="secondary" size="sm" disabled={busy} onClick={onChoose}>
+          {files.length ? "Add more files" : "Choose files"}
+        </Button>
+        <span className="min-w-0 text-sm text-ink-muted">
+          {files.length
+            ? `${files.length} ${files.length === 1 ? "file" : "files"} selected`
+            : emptyLabel}
+        </span>
+      </div>
+      {files.length ? (
+        <ul className="mt-2 text-sm">
+          {files.map((file, index) => (
+            <li
+              key={`${file.name}-${index}`}
+              className="flex items-center justify-between gap-3 border-t border-line-soft py-2 first:border-t-0"
+            >
+              <span className="truncate">{file.name}</span>
+              <Button
+                variant="link"
+                size="sm"
+                className="px-0"
+                disabled={busy}
+                onClick={() => onRemove(index)}
+              >
+                Remove
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
