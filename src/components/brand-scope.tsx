@@ -83,7 +83,11 @@ export function BrandScopePicker({
       {!onMaster ? (
         <p className="mt-2 text-xs text-ink-muted">
           Built on{" "}
-          <Link to={to} params={{ brandId: master.id }} className="font-semibold text-brand hover:underline">
+          <Link
+            to={to}
+            params={{ brandId: master.id }}
+            className="font-semibold text-brand hover:underline"
+          >
             {master.name}
           </Link>{" "}
           · {master.name}'s Must rules still apply

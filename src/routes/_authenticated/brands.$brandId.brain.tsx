@@ -57,7 +57,6 @@ export const Route = createFileRoute("/_authenticated/brands/$brandId/brain")({
   component: BrandBrain,
 });
 
-
 function BrandBrain() {
   const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/brain" });
   const queryClient = useQueryClient();
@@ -151,9 +150,15 @@ function BrandBrain() {
       )}
       <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing" />
 
-      <div role="tablist" aria-label="Brand layers" className="mb-2 flex flex-wrap items-center gap-2">
+      <div
+        role="tablist"
+        aria-label="Brand layers"
+        className="mb-2 flex flex-wrap items-center gap-2"
+      >
         {LAYERS.map((l) => {
-          const count = (rules.data ?? []).filter((r) => r.layer === l && r.status !== "archived").length;
+          const count = (rules.data ?? []).filter(
+            (r) => r.layer === l && r.status !== "archived",
+          ).length;
           return (
             <button
               key={l}
@@ -167,7 +172,9 @@ function BrandBrain() {
               }`}
             >
               {LAYER_LABEL[l]}
-              <span className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-ink-muted"}`}>{count}</span>
+              <span className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-ink-muted"}`}>
+                {count}
+              </span>
             </button>
           );
         })}
@@ -280,14 +287,16 @@ function BrandBrain() {
             )}
           </div>
         </div>
-
       </div>
 
       <section className="surface mt-10 px-6 py-[22px]">
         <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">History</h2>
         <ul className="mt-1.5">
           {(versions.data ?? []).slice(0, 10).map((version) => (
-            <li key={version.id} className="border-t border-line-soft py-3 text-sm first:border-t-0">
+            <li
+              key={version.id}
+              className="border-t border-line-soft py-3 text-sm first:border-t-0"
+            >
               <p className="font-semibold">v{version.version}</p>
               <p className="mt-0.5 text-xs text-ink">{version.diff_summary}</p>
               <p className="mt-1 text-xs text-ink-muted">
@@ -388,7 +397,11 @@ function RuleCard({
             <Detail label="Authority" value={rule.authority ?? "Not stated"} />
             <Detail
               label="Confidence"
-              value={rule.confidence_score != null ? `${Math.round(Number(rule.confidence_score) * 100)}%` : (rule.confidence ?? "—")}
+              value={
+                rule.confidence_score != null
+                  ? `${Math.round(Number(rule.confidence_score) * 100)}%`
+                  : (rule.confidence ?? "—")
+              }
             />
           </dl>
           {rule.source_evidence ? (
@@ -552,7 +565,8 @@ function AiEdit({
     <div className="reveal-enter mt-4 rounded-md bg-card px-4 py-4">
       <p className="text-[13px] font-semibold">Edit with CoBrand</p>
       <p className="mt-0.5 text-xs text-ink-muted">
-        Describe what should change. CoBrand will shape the rule to fit your ask and the rest of the brand.
+        Describe what should change. CoBrand will shape the rule to fit your ask and the rest of the
+        brand.
       </p>
       <Textarea
         className="mt-3"
