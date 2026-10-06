@@ -403,6 +403,49 @@ export const proposeForGap = createServerFn({ method: "POST" })
     return { proposed: true, reason: result.reason, label: result.rule.label };
   });
 
+/** Option C for a checklist category that has no rules yet. */
+export const proposeForCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ brandId: z.string(), category: z.string(), layer: z.string() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, "brands", data.brandId);
+    const supabase = await db();
+    const { data: brand } = await supabase
+      .from("brands")
+      .select("name")
+      .eq("id", data.brandId)
+      .maybeSingle();
+    const rules = await loadRuleLines(data.brandId);
+    const topic = data.category.replace(/_/g, " ");
+    const result = await proposeRule({
+      brandName: brand?.name ?? "the brand",
+      gap: `${topic} (missing) — no ${topic} rule exists in the ${data.layer} layer`,
+      rules,
+    });
+    if (!result.can_propose || !result.rule) return { proposed: false, reason: result.reason };
+
+    await supabase.from("rules").insert({
+      brand_id: data.brandId,
+      layer: data.layer,
+      category: data.category,
+      rule_code: await nextRuleCode(data.brandId, data.category),
+      rule_type: result.rule.rule_type,
+      label: result.rule.label,
+      statement: result.rule.statement,
+      value: result.rule.value ? { raw: result.rule.value } : {},
+      severity: result.rule.severity,
+      review_state: "inferred",
+      status: "proposed",
+      confidence: "low",
+      confidence_score: 0.4,
+      source_citation: "Proposed by CoBrand from related brand context",
+      source_evidence: result.rule.source_evidence,
+    });
+    return { proposed: true, reason: result.reason, label: result.rule.label };
+  });
+
 /* --------------------------------------------------- Conversational edits */
 
 export const draftEdits = createServerFn({ method: "POST" })
