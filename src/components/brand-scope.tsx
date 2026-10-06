@@ -12,7 +12,7 @@ export function BrandScopePicker({
   label,
 }: {
   brandId: string;
-  to: "/brands/$brandId" | "/brands/$brandId/brain";
+  to: "/brands/$brandId" | "/brands/$brandId/brain" | "/brands/$brandId/check";
   label: string;
 }) {
   const family = useQuery({

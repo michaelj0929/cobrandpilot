@@ -1,11 +1,10 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { TriangleAlert, Upload } from "lucide-react";
+import { ClipboardCheck, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Empty, PageHead, StateBadge } from "@/components/app-shell";
-import { SetupGapsPanel } from "@/components/setup-gaps";
 import { BrandScopePicker } from "@/components/brand-scope";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,6 +105,7 @@ function BrandBrain() {
     return all;
   }, [rules.data, layer, filter]);
 
+  const openGapCount = (gaps.data ?? []).filter((g) => !g.resolved).length;
   const layerGaps = (gaps.data ?? []).filter((g) => !g.resolved && g.layer === layer);
   const grouped = useMemo(() => {
     const map = new Map<string, BrandRule[]>();
@@ -182,7 +182,20 @@ function BrandBrain() {
           description="The knowledge base every check runs against. Explore every rule CoBrand holds about the brand, see what is confirmed or inferred, and correct it."
         />
       )}
-      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
+        <Button asChild variant="secondary" className="mb-6">
+          <Link to="/brands/$brandId/check" params={{ brandId }}>
+            <ClipboardCheck aria-hidden />
+            Brand Check
+            {openGapCount > 0 ? (
+              <span className="ml-1 rounded-full bg-[var(--missing)]/10 px-2 text-[11px] font-semibold text-[var(--missing)]">
+                {openGapCount}
+              </span>
+            ) : null}
+          </Link>
+        </Button>
+      </div>
 
 
 
@@ -416,11 +429,6 @@ function BrandBrain() {
           </section>
         </aside>
       </div>
-      {!parentId && brand.data ? (
-        <div className="mt-12">
-          <SetupGapsPanel brandId={brandId} />
-        </div>
-      ) : null}
     </>
   );
 }

@@ -19,6 +19,7 @@ import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedWorkspacesWorkspaceIdRouteImport } from './routes/_authenticated/workspaces.$workspaceId'
 import { Route as AuthenticatedBrandsBrandIdIndexRouteImport } from './routes/_authenticated/brands.$brandId.index'
 import { Route as AuthenticatedBrandsBrandIdBrainRouteImport } from './routes/_authenticated/brands.$brandId.brain'
+import { Route as AuthenticatedBrandsBrandIdCheckRouteImport } from './routes/_authenticated/brands.$brandId.check'
 import { Route as AuthenticatedBrandsBrandIdReviewRouteImport } from './routes/_authenticated/brands.$brandId.review'
 import { Route as AuthenticatedBrandsBrandIdReviewsRouteImport } from './routes/_authenticated/brands.$brandId.reviews'
 
@@ -77,6 +78,12 @@ const AuthenticatedBrandsBrandIdBrainRoute =
     path: '/brain',
     getParentRoute: () => AuthenticatedBrandsBrandIdRoute,
   } as any)
+const AuthenticatedBrandsBrandIdCheckRoute =
+  AuthenticatedBrandsBrandIdCheckRouteImport.update({
+    id: '/check',
+    path: '/check',
+    getParentRoute: () => AuthenticatedBrandsBrandIdRoute,
+  } as any)
 const AuthenticatedBrandsBrandIdReviewRoute =
   AuthenticatedBrandsBrandIdReviewRouteImport.update({
     id: '/review',
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
+  '/brands/$brandId/check': typeof AuthenticatedBrandsBrandIdCheckRoute
   '/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
   '/brands/$brandId/reviews': typeof AuthenticatedBrandsBrandIdReviewsRoute
   '/brands/$brandId/': typeof AuthenticatedBrandsBrandIdIndexRoute
@@ -111,6 +119,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
   '/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
+  '/brands/$brandId/check': typeof AuthenticatedBrandsBrandIdCheckRoute
   '/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
   '/brands/$brandId/reviews': typeof AuthenticatedBrandsBrandIdReviewsRoute
   '/brands/$brandId': typeof AuthenticatedBrandsBrandIdIndexRoute
@@ -126,6 +135,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/_authenticated/brands/$brandId/brain': typeof AuthenticatedBrandsBrandIdBrainRoute
+  '/_authenticated/brands/$brandId/check': typeof AuthenticatedBrandsBrandIdCheckRoute
   '/_authenticated/brands/$brandId/review': typeof AuthenticatedBrandsBrandIdReviewRoute
   '/_authenticated/brands/$brandId/reviews': typeof AuthenticatedBrandsBrandIdReviewsRoute
   '/_authenticated/brands/$brandId/': typeof AuthenticatedBrandsBrandIdIndexRoute
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/workspaces/'
     | '/brands/$brandId/brain'
+    | '/brands/$brandId/check'
     | '/brands/$brandId/review'
     | '/brands/$brandId/reviews'
     | '/brands/$brandId/'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/workspaces'
     | '/brands/$brandId/brain'
+    | '/brands/$brandId/check'
     | '/brands/$brandId/review'
     | '/brands/$brandId/reviews'
     | '/brands/$brandId'
@@ -167,6 +179,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceId'
     | '/_authenticated/workspaces/'
     | '/_authenticated/brands/$brandId/brain'
+    | '/_authenticated/brands/$brandId/check'
     | '/_authenticated/brands/$brandId/review'
     | '/_authenticated/brands/$brandId/reviews'
     | '/_authenticated/brands/$brandId/'
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrandsBrandIdBrainRouteImport
       parentRoute: typeof AuthenticatedBrandsBrandIdRoute
     }
+    '/_authenticated/brands/$brandId/check': {
+      id: '/_authenticated/brands/$brandId/check'
+      path: '/check'
+      fullPath: '/brands/$brandId/check'
+      preLoaderRoute: typeof AuthenticatedBrandsBrandIdCheckRouteImport
+      parentRoute: typeof AuthenticatedBrandsBrandIdRoute
+    }
     '/_authenticated/brands/$brandId/review': {
       id: '/_authenticated/brands/$brandId/review'
       path: '/review'
@@ -269,6 +289,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedBrandsBrandIdRouteChildren {
   AuthenticatedBrandsBrandIdBrainRoute: typeof AuthenticatedBrandsBrandIdBrainRoute
+  AuthenticatedBrandsBrandIdCheckRoute: typeof AuthenticatedBrandsBrandIdCheckRoute
   AuthenticatedBrandsBrandIdReviewRoute: typeof AuthenticatedBrandsBrandIdReviewRoute
   AuthenticatedBrandsBrandIdReviewsRoute: typeof AuthenticatedBrandsBrandIdReviewsRoute
   AuthenticatedBrandsBrandIdIndexRoute: typeof AuthenticatedBrandsBrandIdIndexRoute
@@ -277,6 +298,7 @@ interface AuthenticatedBrandsBrandIdRouteChildren {
 const AuthenticatedBrandsBrandIdRouteChildren: AuthenticatedBrandsBrandIdRouteChildren =
   {
     AuthenticatedBrandsBrandIdBrainRoute: AuthenticatedBrandsBrandIdBrainRoute,
+    AuthenticatedBrandsBrandIdCheckRoute: AuthenticatedBrandsBrandIdCheckRoute,
     AuthenticatedBrandsBrandIdReviewRoute:
       AuthenticatedBrandsBrandIdReviewRoute,
     AuthenticatedBrandsBrandIdReviewsRoute:
