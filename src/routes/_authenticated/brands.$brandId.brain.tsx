@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, TriangleAlert, Upload } from "lucide-react";
@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { Empty, PageHead, StateBadge } from "@/components/app-shell";
 import { BrandScopePicker } from "@/components/brand-scope";
+import { SubBrandActions } from "@/components/sub-brands";
 import { BrandStatusCard } from "@/components/brand-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,7 @@ function BrandBrain() {
 
   const rules = useQuery({ queryKey: ["rules", brandId], queryFn: () => listRules(brandId) });
   const gaps = useQuery({ queryKey: ["gaps", brandId], queryFn: () => listGaps(brandId) });
+  const navigate = useNavigate();
   const brand = useQuery({ queryKey: ["brand", brandId], queryFn: () => getBrand(brandId) });
   const parentId = brand.data?.parent_brand_id ?? null;
   const master = useQuery({
@@ -148,6 +150,15 @@ function BrandBrain() {
         <div className="flex min-w-0 flex-col gap-5">
           <div>
             <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
+            {parentId && brand.data ? (
+              <div className="-mt-2 mb-4 flex items-center gap-2 text-xs text-ink-muted">
+                <span>Remove {brand.data.name} from {master.data?.name ?? "the master brand"}</span>
+                <SubBrandActions
+                  sub={brand.data}
+                  onDeleted={() => navigate({ to: "/brands/$brandId/brain", params: { brandId: parentId } })}
+                />
+              </div>
+            ) : null}
 
             <div
               role="tablist"
