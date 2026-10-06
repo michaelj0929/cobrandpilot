@@ -1,18 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { BRAND_KIND_LABEL, getBrandFamilyOf } from "@/lib/cobrand-client";
+import { getBrandFamilyOf } from "@/lib/cobrand-client";
 
-/** Compact master › sub-brand switcher; keeps you in the same section. */
+type ScopeRoute = "/brands/$brandId" | "/brands/$brandId/brain" | "/brands/$brandId/check";
+
+/** Brand family panel: master brand with sub-brands and product lines beneath; keeps you in the same section. */
 export function BrandScopePicker({
   brandId,
   to,
   label,
 }: {
   brandId: string;
-  to: "/brands/$brandId" | "/brands/$brandId/brain" | "/brands/$brandId/check";
+  to: ScopeRoute;
   label: string;
 }) {
   const family = useQuery({
@@ -22,40 +23,76 @@ export function BrandScopePicker({
   const master = family.data?.master;
   if (!master) return null;
   const subs = family.data?.subBrands ?? [];
+  const groups = [
+    { title: "Sub-brands", items: subs.filter((b) => b.kind === "sub_brand") },
+    { title: "Product lines", items: subs.filter((b) => b.kind === "product_line") },
+  ].filter((g) => g.items.length > 0);
+  const onMaster = master.id === brandId;
 
-  const pill = (active: boolean, small: boolean) =>
+  const chip = (active: boolean) =>
     cn(
-      "inline-flex items-center rounded-full border transition-colors",
-      small ? "h-7 px-3 text-xs" : "h-8 px-3.5 text-[13px] font-semibold",
+      "inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium transition-colors",
       active
         ? "border-foreground bg-foreground text-background"
-        : "border-line-soft text-ink-muted hover:text-ink",
+        : "border-line-soft bg-card text-ink hover:border-foreground/30",
     );
 
   return (
-    <nav aria-label={label} className="mb-6 flex flex-wrap items-center gap-1.5">
-      <span className="mr-1.5 text-xs text-ink-muted">{label}</span>
-      <Link
-        to={to}
-        params={{ brandId: master.id }}
-        aria-current={master.id === brandId ? "page" : undefined}
-        className={pill(master.id === brandId, false)}
-      >
-        {master.name}
-      </Link>
-      {subs.length > 0 ? <ChevronRight aria-hidden className="size-3.5 text-ink-muted" /> : null}
-      {subs.map((b) => (
-        <Link
-          key={b.id}
-          to={to}
-          params={{ brandId: b.id }}
-          title={BRAND_KIND_LABEL[b.kind]}
-          aria-current={b.id === brandId ? "page" : undefined}
-          className={pill(b.id === brandId, true)}
-        >
-          {b.name}
-        </Link>
-      ))}
+    <nav aria-label={label} className="mb-6">
+      <p className="eyebrow mb-2">{label}</p>
+      <div className="inline-flex max-w-full flex-col rounded-lg border border-line-soft bg-card px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <Link
+            to={to}
+            params={{ brandId: master.id }}
+            aria-current={onMaster ? "page" : undefined}
+            className={cn(chip(onMaster), "font-semibold")}
+          >
+            {master.name}
+          </Link>
+          <span className="text-xs text-ink-muted">Master brand</span>
+        </div>
+
+        {groups.length > 0 ? (
+          <div className="ml-3.5 mt-2 border-l border-line-soft">
+            {groups.map((g) => (
+              <div key={g.title} className="flex items-center gap-3 py-1.5">
+                <span aria-hidden className="h-px w-3 bg-line-soft" />
+                <span className="w-24 shrink-0 text-xs text-ink-muted">{g.title}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {g.items.map((b) => (
+                    <Link
+                      key={b.id}
+                      to={to}
+                      params={{ brandId: b.id }}
+                      aria-current={b.id === brandId ? "page" : undefined}
+                      className={chip(b.id === brandId)}
+                    >
+                      {b.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-ink-muted">No sub-brands or product lines yet</p>
+        )}
+      </div>
+
+      {!onMaster ? (
+        <p className="mt-2 text-xs text-ink-muted">
+          Built on{" "}
+          <Link
+            to={to}
+            params={{ brandId: master.id }}
+            className="font-semibold text-brand hover:underline"
+          >
+            {master.name}
+          </Link>{" "}
+          · {master.name}'s Must rules still apply
+        </p>
+      ) : null}
     </nav>
   );
 }

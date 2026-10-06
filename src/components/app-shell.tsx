@@ -31,7 +31,15 @@ export type ShellBrand = {
   workspaceId?: string | null;
 };
 
-export function AppShell({ brand, workspaceId, children }: { brand?: ShellBrand; workspaceId?: string; children: ReactNode }) {
+export function AppShell({
+  brand,
+  workspaceId,
+  children,
+}: {
+  brand?: ShellBrand;
+  workspaceId?: string;
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-h-screen flex-col bg-page md:flex-row">
       <SideNav brand={brand} workspaceId={workspaceId ?? brand?.workspaceId} />
@@ -45,7 +53,13 @@ export function AppShell({ brand, workspaceId, children }: { brand?: ShellBrand;
 const navItem =
   "flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-ink-muted transition-colors";
 
-function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; workspaceId?: string | null | undefined }) {
+function SideNav({
+  brand,
+  workspaceId,
+}: {
+  brand?: ShellBrand | undefined;
+  workspaceId?: string | null | undefined;
+}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const user = useAuthUser();
   const [collapsed, setCollapsed] = useState(false);
@@ -64,7 +78,9 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
   const masterId = brand ? (brand.master?.id ?? brand.id) : null;
 
   const isOn = {
-    home: workspaceId ? pathname === `/workspaces/${workspaceId}` : pathname === "/workspaces" || pathname === "/workspaces/",
+    home: workspaceId
+      ? pathname === `/workspaces/${workspaceId}`
+      : pathname === "/workspaces" || pathname === "/workspaces/",
     settings: pathname.startsWith("/settings"),
     uploads: brandBase !== null && /^\/brands\/[^/]+\/?$/.test(pathname),
     system: brandBase !== null && /^\/brands\/[^/]+\/brain/.test(pathname),
@@ -74,149 +90,193 @@ function SideNav({ brand, workspaceId }: { brand?: ShellBrand | undefined; works
       pathname.startsWith("/reviews/"),
   };
 
-  const itemClass = (active: boolean) => cn(navItem, "hover:bg-page hover:text-ink", collapsed && "md:justify-center md:px-0", active && on);
+  const itemClass = (active: boolean) =>
+    cn(
+      navItem,
+      "hover:bg-page hover:text-ink",
+      collapsed && "md:justify-center md:px-0",
+      active && on,
+    );
   const labelClass = cn(collapsed && "md:sr-only");
 
   return (
     <nav
       aria-label="Main"
-      className={cn("flex flex-col gap-0.5 border-b border-line-soft bg-card p-4 md:sticky md:top-0 md:h-screen md:shrink-0 md:border-r md:border-b-0 md:pt-8 md:pb-6 md:transition-[width,padding] md:duration-200", collapsed ? "md:w-[72px] md:px-3" : "md:w-[236px] md:px-4")}
+      className={cn(
+        "flex flex-col gap-0.5 border-b border-line-soft bg-card p-4 md:sticky md:top-0 md:h-screen md:shrink-0 md:border-r md:border-b-0 md:pt-8 md:pb-6 md:transition-[width,padding] md:duration-200",
+        collapsed ? "md:w-[72px] md:px-3" : "md:w-[236px] md:px-4",
+      )}
     >
-      <div className={cn("flex items-start justify-between gap-1 pb-3 md:pb-8", collapsed && "md:flex-col md:items-center md:pb-4")}>
+      <div
+        className={cn(
+          "flex items-start justify-between gap-1 pb-3 md:pb-8",
+          collapsed && "md:flex-col md:items-center md:pb-4",
+        )}
+      >
         <Link
           to="/workspaces"
           aria-label="CoBrand home"
           title="Brand Hub"
-          className={cn("inline-flex flex-col self-start px-3 text-[26px] leading-[0.8] font-extrabold text-ink", collapsed && "md:px-1 md:text-xl")}
+          className={cn(
+            "inline-flex flex-col self-start px-3 text-[26px] leading-[0.8] font-extrabold text-ink",
+            collapsed && "md:px-1 md:text-xl",
+          )}
         >
           <span>co</span>
           <span className={cn(collapsed && "md:sr-only")}>brand</span>
         </Link>
-        <Button variant="ghost" size="icon" className="md:hidden" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen} onClick={() => setMobileOpen((value) => !value)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((value) => !value)}
+        >
           <Menu aria-hidden />
         </Button>
-        <Button variant="ghost" size="icon" className="hidden shrink-0 md:inline-flex" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} title={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={toggleCollapsed}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden shrink-0 md:inline-flex"
+          aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+          title={collapsed ? "Expand navigation" : "Collapse navigation"}
+          aria-expanded={!collapsed}
+          onClick={toggleCollapsed}
+        >
           {collapsed ? <ChevronRight aria-hidden /> : <ChevronLeft aria-hidden />}
         </Button>
       </div>
 
-      <div className={cn("flex flex-col gap-0.5 md:flex md:min-h-0 md:flex-1", !mobileOpen && "hidden")} onClick={() => setMobileOpen(false)}>
+      <div
+        className={cn(
+          "flex flex-col gap-0.5 md:flex md:min-h-0 md:flex-1",
+          !mobileOpen && "hidden",
+        )}
+        onClick={() => setMobileOpen(false)}
+      >
+        {brand && !collapsed ? (
+          <div className="hidden px-3 pb-5 md:block">
+            <p className="text-xs text-ink-muted">{brand.kindLabel ?? "Brand"}</p>
+            <p className="truncate text-sm font-semibold text-ink">{brand.name ?? "…"}</p>
+            {brand.master ? (
+              <Link
+                to="/brands/$brandId/brain"
+                params={{ brandId: brand.master.id }}
+                className="block truncate text-xs text-brand hover:text-brand-deep"
+              >
+                under {brand.master.name}
+              </Link>
+            ) : brand.version ? (
+              <p className="text-xs text-ink-muted">Brand model v{brand.version}</p>
+            ) : null}
+          </div>
+        ) : null}
 
-      {brand && !collapsed ? (
-        <div className="hidden px-3 pb-5 md:block">
-          <p className="text-xs text-ink-muted">{brand.kindLabel ?? "Brand"}</p>
-          <p className="truncate text-sm font-semibold text-ink">{brand.name ?? "…"}</p>
-          {brand.master ? (
-            <Link
+        {workspaceId ? (
+          <Link
+            to="/workspaces/$workspaceId"
+            params={{ workspaceId }}
+            title="Home"
+            aria-label="Home"
+            className={itemClass(isOn.home)}
+          >
+            <NavIcon icon={House} />
+            <span className={labelClass}>Home</span>
+          </Link>
+        ) : (
+          <Link
+            to="/workspaces"
+            title="Brand Hub"
+            aria-label="Brand Hub"
+            className={itemClass(isOn.home)}
+          >
+            <NavIcon icon={House} />
+            <span className={labelClass}>Brand Hub</span>
+          </Link>
+        )}
+        {workspaceId ? (
+          <>
+            <BrandNavLink
+              brandId={masterId ?? undefined}
+              to="/brands/$brandId"
+              icon={Upload}
+              label="Uploads"
+              active={isOn.uploads}
+              collapsed={collapsed}
+            />
+            <BrandNavLink
+              brandId={masterId ?? undefined}
               to="/brands/$brandId/brain"
-              params={{ brandId: brand.master.id }}
-              className="block truncate text-xs text-brand hover:text-brand-deep"
-            >
-              under {brand.master.name}
-            </Link>
-          ) : brand.version ? (
-            <p className="text-xs text-ink-muted">Brand model v{brand.version}</p>
-          ) : null}
-        </div>
-      ) : null}
+              icon={LayoutGrid}
+              label="Brand System"
+              active={isOn.system}
+              collapsed={collapsed}
+            />
+            {masterId ? (
+              <Link
+                to="/brands/$brandId/review"
+                params={{ brandId: masterId }}
+                search={brand?.master ? { with: brand.id } : {}}
+                title="Creative Review"
+                aria-label="Creative Review"
+                className={itemClass(isOn.checks)}
+              >
+                <NavIcon icon={CircleCheck} />
+                <span className={labelClass}>Creative Review</span>
+              </Link>
+            ) : (
+              <BrandNavLink
+                brandId={undefined}
+                to="/brands/$brandId/review"
+                icon={CircleCheck}
+                label="Creative Review"
+                active={false}
+                collapsed={collapsed}
+              />
+            )}
+            <BrandNavLink
+              brandId={masterId ?? undefined}
+              to="/brands/$brandId/reviews"
+              icon={History}
+              label="Past Reviews"
+              active={isOn.past}
+              collapsed={collapsed}
+            />
+            <SoonItem icon={Activity} label="Activity" collapsed={collapsed} />
+          </>
+        ) : null}
 
-      {workspaceId ? (
-        <Link
-          to="/workspaces/$workspaceId"
-          params={{ workspaceId }}
-          title="Home"
-          aria-label="Home"
-          className={itemClass(isOn.home)}
-        >
-          <NavIcon icon={House} />
-          <span className={labelClass}>Home</span>
-        </Link>
-      ) : (
-        <Link
-          to="/workspaces"
-          title="Brand Hub"
-          aria-label="Brand Hub"
-          className={itemClass(isOn.home)}
-        >
-          <NavIcon icon={House} />
-          <span className={labelClass}>Brand Hub</span>
-        </Link>
-      )}
-      {workspaceId ? <><BrandNavLink
-        brandId={masterId ?? undefined}
-        to="/brands/$brandId"
-        icon={Upload}
-        label="Uploads"
-        active={isOn.uploads}
-        collapsed={collapsed}
-      />
-      <BrandNavLink
-        brandId={masterId ?? undefined}
-        to="/brands/$brandId/brain"
-        icon={LayoutGrid}
-        label="Brand System"
-        active={isOn.system}
-        collapsed={collapsed}
-      />
-      {masterId ? (
-        <Link
-          to="/brands/$brandId/review"
-          params={{ brandId: masterId }}
-          search={brand?.master ? { with: brand.id } : {}}
-          title="Creative Review"
-          aria-label="Creative Review"
-          className={itemClass(isOn.checks)}
-        >
-          <NavIcon icon={CircleCheck} />
-          <span className={labelClass}>Creative Review</span>
-        </Link>
-      ) : (
-        <BrandNavLink
-          brandId={undefined}
-          to="/brands/$brandId/review"
-          icon={CircleCheck}
-          label="Creative Review"
-          active={false}
-          collapsed={collapsed}
-        />
-      )}
-      <BrandNavLink
-        brandId={masterId ?? undefined}
-        to="/brands/$brandId/reviews"
-        icon={History}
-        label="Past Reviews"
-        active={isOn.past}
-        collapsed={collapsed}
-      />
-      <SoonItem icon={Activity} label="Activity" collapsed={collapsed} /></> : null}
+        <div className="hidden min-h-6 flex-1 md:block" />
 
-      <div className="hidden min-h-6 flex-1 md:block" />
-
-      <Link
-        to="/settings"
-        title="Settings"
-        aria-label="Settings"
-        className={itemClass(isOn.settings)}
-      >
-        <NavIcon icon={Settings} />
-        <span className={labelClass}>Settings</span>
-      </Link>
-      <Link
-        to="/settings"
-        aria-label="Your account"
-        title="Your account"
-        className={cn("mt-2.5 flex items-center gap-2.5 rounded-md border-line-soft px-3 pt-4 transition-colors hover:text-brand md:border-t", collapsed && "md:justify-center md:px-0")}
-      >
-        <UserAvatar user={user} />
-        <span className={cn("hidden min-w-0 md:block", collapsed && "md:sr-only")}>
-          <b className="block truncate text-[13px] leading-[17px] font-semibold text-ink">
-            {user ? displayName(user) : "…"}
-          </b>
-          <small className="block truncate text-xs leading-4 text-ink-muted">
-            {user?.email ?? ""}
-          </small>
-        </span>
-      </Link>
+        <Link
+          to="/settings"
+          title="Settings"
+          aria-label="Settings"
+          className={itemClass(isOn.settings)}
+        >
+          <NavIcon icon={Settings} />
+          <span className={labelClass}>Settings</span>
+        </Link>
+        <Link
+          to="/settings"
+          aria-label="Your account"
+          title="Your account"
+          className={cn(
+            "mt-2.5 flex items-center gap-2.5 rounded-md border-line-soft px-3 pt-4 transition-colors hover:text-brand md:border-t",
+            collapsed && "md:justify-center md:px-0",
+          )}
+        >
+          <UserAvatar user={user} />
+          <span className={cn("hidden min-w-0 md:block", collapsed && "md:sr-only")}>
+            <b className="block truncate text-[13px] leading-[17px] font-semibold text-ink">
+              {user ? displayName(user) : "…"}
+            </b>
+            <small className="block truncate text-xs leading-4 text-ink-muted">
+              {user?.email ?? ""}
+            </small>
+          </span>
+        </Link>
       </div>
     </nav>
   );
@@ -237,7 +297,11 @@ function BrandNavLink({
   collapsed,
 }: {
   brandId: string | undefined;
-  to: "/brands/$brandId" | "/brands/$brandId/brain" | "/brands/$brandId/review" | "/brands/$brandId/reviews";
+  to:
+    | "/brands/$brandId"
+    | "/brands/$brandId/brain"
+    | "/brands/$brandId/review"
+    | "/brands/$brandId/reviews";
   icon: LucideIcon;
   label: string;
   active: boolean;
@@ -247,7 +311,11 @@ function BrandNavLink({
     return (
       <span
         aria-disabled
-        className={cn(navItem, "cursor-not-allowed opacity-60", collapsed && "md:justify-center md:px-0")}
+        className={cn(
+          navItem,
+          "cursor-not-allowed opacity-60",
+          collapsed && "md:justify-center md:px-0",
+        )}
         title="Open a brand first"
       >
         <NavIcon icon={icon} />
@@ -261,7 +329,12 @@ function BrandNavLink({
       params={{ brandId }}
       title={label}
       aria-label={label}
-      className={cn(navItem, "hover:bg-page hover:text-ink", collapsed && "md:justify-center md:px-0", active && on)}
+      className={cn(
+        navItem,
+        "hover:bg-page hover:text-ink",
+        collapsed && "md:justify-center md:px-0",
+        active && on,
+      )}
     >
       <NavIcon icon={icon} />
       <span className={cn(collapsed && "md:sr-only")}>{label}</span>
@@ -270,12 +343,29 @@ function BrandNavLink({
 }
 
 /** Placeholder for a section that doesn't exist yet. */
-function SoonItem({ icon, label, collapsed }: { icon: LucideIcon; label: string; collapsed: boolean }) {
+function SoonItem({
+  icon,
+  label,
+  collapsed,
+}: {
+  icon: LucideIcon;
+  label: string;
+  collapsed: boolean;
+}) {
   return (
-    <span aria-disabled title={`${label} (soon)`} className={cn(navItem, "cursor-not-allowed", collapsed && "md:justify-center md:px-0")}>
+    <span
+      aria-disabled
+      title={`${label} (soon)`}
+      className={cn(navItem, "cursor-not-allowed", collapsed && "md:justify-center md:px-0")}
+    >
       <NavIcon icon={icon} />
       <span className={cn("opacity-70", collapsed && "md:sr-only")}>{label}</span>
-      <span className={cn("ml-auto rounded-full bg-page px-2 text-[11px] leading-5 font-semibold text-ink-muted", collapsed && "md:hidden")}>
+      <span
+        className={cn(
+          "ml-auto rounded-full bg-page px-2 text-[11px] leading-5 font-semibold text-ink-muted",
+          collapsed && "md:hidden",
+        )}
+      >
         soon
       </span>
     </span>
@@ -304,7 +394,13 @@ export function PageHead({
         <h1>{title}</h1>
         {description ? <p className="lede">{description}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
+      {actions ? (
+        <div
+          className={`flex flex-wrap items-center gap-3 ${actionsAlign === "start" ? "w-full sm:w-auto" : ""}`}
+        >
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }

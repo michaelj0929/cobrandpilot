@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ClipboardCheck, Sparkles, TriangleAlert, Upload } from "lucide-react";
+import { Sparkles, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Empty, PageHead, StateBadge } from "@/components/app-shell";
 import { BrandScopePicker } from "@/components/brand-scope";
+import { BrandStatusCard } from "@/components/brand-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,6 @@ export const Route = createFileRoute("/_authenticated/brands/$brandId/brain")({
   }),
   component: BrandBrain,
 });
-
 
 function BrandBrain() {
   const { brandId } = useParams({ from: "/_authenticated/brands/$brandId/brain" });
@@ -119,41 +119,14 @@ function BrandBrain() {
     };
   }, [rules.data]);
 
-  const confirmedPct = counts.total ? (counts.confirmed / counts.total) * 100 : 0;
-
   const statusBlock = (
-    <div className="flex flex-col items-stretch gap-3 sm:items-end">
-      <section className="rounded-lg bg-brand-tint px-5 py-3.5">
-            <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">Brand status</h2>
-            <p className="mt-1 text-[13px] font-semibold text-brand">
-              {counts.total} rules · {counts.confirmed} confirmed · {counts.review} awaiting review
-            </p>
-            <div
-              className="mt-2 h-1.5 w-56 overflow-hidden rounded-full bg-brand-soft"
-              role="progressbar"
-              aria-label="Confirmed rules"
-              aria-valuenow={Math.round(confirmedPct)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full bg-brand transition-[width] duration-700"
-                style={{ width: `${confirmedPct}%` }}
-              />
-            </div>
-          </section>
-          <Button asChild variant="secondary">
-            <Link to="/brands/$brandId/check" params={{ brandId }}>
-              <ClipboardCheck aria-hidden />
-              Brand Check
-              {openGapCount > 0 ? (
-                <span className="ml-1 rounded-full bg-[var(--missing)]/10 px-2 text-[11px] font-semibold text-[var(--missing)]">
-                  {openGapCount}
-                </span>
-              ) : null}
-            </Link>
-          </Button>
-    </div>
+    <BrandStatusCard
+      brandId={brandId}
+      total={counts.total}
+      confirmed={counts.confirmed}
+      review={counts.review}
+      missing={openGapCount}
+    />
   );
 
   return (
@@ -175,13 +148,17 @@ function BrandBrain() {
           actionsAlign="start"
         />
       )}
-      <div className="mb-6">
-        <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Brand" />
-      </div>
+      <BrandScopePicker brandId={brandId} to="/brands/$brandId/brain" label="Viewing" />
 
-      <div role="tablist" aria-label="Brand layers" className="mb-2 flex flex-wrap items-center gap-2">
+      <div
+        role="tablist"
+        aria-label="Brand layers"
+        className="mb-2 flex flex-wrap items-center gap-2"
+      >
         {LAYERS.map((l) => {
-          const count = (rules.data ?? []).filter((r) => r.layer === l && r.status !== "archived").length;
+          const count = (rules.data ?? []).filter(
+            (r) => r.layer === l && r.status !== "archived",
+          ).length;
           return (
             <button
               key={l}
@@ -195,7 +172,9 @@ function BrandBrain() {
               }`}
             >
               {LAYER_LABEL[l]}
-              <span className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-ink-muted"}`}>{count}</span>
+              <span className={`ml-1.5 text-xs ${layer === l ? "opacity-70" : "text-ink-muted"}`}>
+                {count}
+              </span>
             </button>
           );
         })}
@@ -308,14 +287,16 @@ function BrandBrain() {
             )}
           </div>
         </div>
-
       </div>
 
       <section className="surface mt-10 px-6 py-[22px]">
         <h2 className="text-[13px] leading-[18px] tracking-[0.2px]">History</h2>
         <ul className="mt-1.5">
           {(versions.data ?? []).slice(0, 10).map((version) => (
-            <li key={version.id} className="border-t border-line-soft py-3 text-sm first:border-t-0">
+            <li
+              key={version.id}
+              className="border-t border-line-soft py-3 text-sm first:border-t-0"
+            >
               <p className="font-semibold">v{version.version}</p>
               <p className="mt-0.5 text-xs text-ink">{version.diff_summary}</p>
               <p className="mt-1 text-xs text-ink-muted">
@@ -416,7 +397,11 @@ function RuleCard({
             <Detail label="Authority" value={rule.authority ?? "Not stated"} />
             <Detail
               label="Confidence"
-              value={rule.confidence_score != null ? `${Math.round(Number(rule.confidence_score) * 100)}%` : (rule.confidence ?? "—")}
+              value={
+                rule.confidence_score != null
+                  ? `${Math.round(Number(rule.confidence_score) * 100)}%`
+                  : (rule.confidence ?? "—")
+              }
             />
           </dl>
           {rule.source_evidence ? (
@@ -580,7 +565,8 @@ function AiEdit({
     <div className="reveal-enter mt-4 rounded-md bg-card px-4 py-4">
       <p className="text-[13px] font-semibold">Edit with CoBrand</p>
       <p className="mt-0.5 text-xs text-ink-muted">
-        Describe what should change. CoBrand will shape the rule to fit your ask and the rest of the brand.
+        Describe what should change. CoBrand will shape the rule to fit your ask and the rest of the
+        brand.
       </p>
       <Textarea
         className="mt-3"
