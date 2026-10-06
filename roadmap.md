@@ -1,4 +1,5 @@
 
 ## Open
-- [ ] Remove/Replace for sub-brands & product lines (Settings + Uploads): each can be Removed or Replaced.
-- [ ] All source materials get Remove or Replace options (Uploads section).
+- [ ] Replace numeric review scores with verdict statuses across Past Reviews and review results.
+- [ ] Reduce review dimensions to Brand Compliant, Copy, and Layout.
+- [ ] Collapse review issues by default with expandable detail.
