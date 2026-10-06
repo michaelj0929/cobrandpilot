@@ -250,6 +250,36 @@ export async function createSourceFromText(
   return data.id;
 }
 
+/**
+ * Removes everything an uploaded source contributed: the rules extracted from
+ * it, its stored file (best effort) and its row.
+ */
+export async function deleteSource(source: { id: string; storage_path: string | null }) {
+  await supabase.from("rules").delete().eq("source_file_id", source.id);
+  if (source.storage_path) {
+    await supabase.storage.from("brand-sources").remove([source.storage_path]);
+  }
+  const { error } = await supabase.from("source_files").delete().eq("id", source.id);
+  if (error) throw error;
+}
+
+/** Swaps one uploaded source for a new file, keeping its document type. */
+export async function replaceSource(
+  brandId: string,
+  old: { id: string; storage_path: string | null; classification: string | null },
+  file: File,
+) {
+  await deleteSource(old);
+  return createSourceFromFile(brandId, file, old.classification ?? undefined);
+}
+
+/** Deletes a brand (or sub-brand / product line) and everything under it. */
+export async function deleteBrand(id: string) {
+  const { error } = await supabase.from("brands").delete().eq("id", id);
+  if (error) throw error;
+}
+
+
 export type ProposedEdit = {
   action: "update" | "add" | "archive";
   rule_id: string | null;
