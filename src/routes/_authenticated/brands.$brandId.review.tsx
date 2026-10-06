@@ -353,7 +353,7 @@ function ReviewIntake() {
                   setCheckId(null);
                   setReport(null);
                 }}
-                emptyLabel="PDF, PowerPoint, Word, CSV, Figma exports or images"
+                emptyLabel="PDF, PowerPoint, Word, CSV or images"
                 busy={!!busy}
               />
               <Textarea
@@ -391,7 +391,7 @@ function ReviewIntake() {
                   setCheckId(null);
                   setReport(null);
                 }}
-                emptyLabel="PDF, PowerPoint, Word, CSV, Figma exports or images"
+                emptyLabel="PDF, PowerPoint, Word, CSV or images"
                 busy={!!busy}
               />
               <Textarea
