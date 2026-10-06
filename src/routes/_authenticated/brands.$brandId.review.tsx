@@ -288,8 +288,8 @@ function ReviewIntake() {
               Group every asset for one piece of work under a single review. All fields marked * are
               required.
             </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-1.5 sm:col-span-2">
+            <div className="mt-5 grid flex-1 content-between gap-4">
+              <div className="grid gap-1.5">
                 <Label htmlFor="title">Project Title *</Label>
                 <Input
                   id="title"
