@@ -101,7 +101,7 @@ function SourcesAndGaps() {
   }
 
   const upload = useMutation({
-    mutationFn: async (files: FileList) => {
+    mutationFn: async (files: File[]) => {
       setError(null);
       const list = Array.from(files).slice(0, MAX_FILES_PER_PASS);
       const tooBig = list.find((f) => f.size > MAX_FILE_BYTES);
@@ -267,7 +267,8 @@ function SourcesAndGaps() {
               accept={ACCEPTED_TYPES}
               className="hidden"
               onChange={(e) => {
-                if (e.target.files?.length) upload.mutate(e.target.files);
+                const picked = Array.from(e.target.files ?? []);
+                if (picked.length) upload.mutate(picked);
                 e.target.value = "";
               }}
             />
