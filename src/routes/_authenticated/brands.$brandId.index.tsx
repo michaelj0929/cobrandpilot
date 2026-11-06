@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
-import { Hammer, Upload } from "lucide-react";
+import { FileText, Hammer, Upload, X } from "lucide-react";
 
 import { Empty, PageHead } from "@/components/app-shell";
 import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
@@ -67,6 +67,7 @@ function SourcesAndGaps() {
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [selected, setSelected] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const sources = useQuery({
@@ -114,6 +115,7 @@ function SourcesAndGaps() {
           classification || undefined,
         );
       }
+      setSelected([]);
       queryClient.invalidateQueries({ queryKey: ["sources", brandId] });
     },
     onSettled: () => setBusy(null),
@@ -268,7 +270,13 @@ function SourcesAndGaps() {
               className="hidden"
               onChange={(e) => {
                 const picked = Array.from(e.target.files ?? []);
-                if (picked.length) upload.mutate(picked);
+                if (picked.length)
+                  setSelected((cur) => {
+                    const merged = [...cur];
+                    for (const f of picked)
+                      if (!merged.some((m) => m.name === f.name && m.size === f.size)) merged.push(f);
+                    return merged.slice(0, MAX_FILES_PER_PASS);
+                  });
                 e.target.value = "";
               }}
             />
@@ -300,6 +308,43 @@ function SourcesAndGaps() {
                 · PDF, PowerPoint, Word, images or SVG
               </span>
             </button>
+
+            {selected.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                <ul className="flex flex-col rounded-lg border border-line-soft bg-card px-4">
+                  {selected.map((file) => (
+                    <li
+                      key={`${file.name}-${file.size}`}
+                      className="flex items-center gap-3 border-t border-line-soft py-2 text-sm first:border-t-0"
+                    >
+                      <FileText aria-hidden className="size-4 shrink-0 text-ink-muted" />
+                      <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                      <span className="text-xs text-ink-muted">
+                        {(file.size / 1024 / 1024).toFixed(1)} MB
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${file.name}`}
+                        disabled={!!busy}
+                        onClick={() => setSelected((fs) => fs.filter((f) => f !== file))}
+                        className="flex size-8 cursor-pointer items-center justify-center rounded-md text-ink-muted hover:bg-page hover:text-ink"
+                      >
+                        <X aria-hidden className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button disabled={!!busy} onClick={() => upload.mutate(selected)}>
+                    <Upload aria-hidden />
+                    Upload {selected.length} {selected.length === 1 ? "file" : "files"}
+                  </Button>
+                  <Button variant="ghost" disabled={!!busy} onClick={() => setSelected([])}>
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="flex flex-col gap-1.5 border-t border-line-soft pt-5">
               <Label htmlFor="paste-title">Or paste text</Label>
