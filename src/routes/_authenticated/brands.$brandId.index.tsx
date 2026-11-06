@@ -8,6 +8,7 @@ import { FileText, Hammer, Upload, X } from "lucide-react";
 import { Empty, PageHead } from "@/components/app-shell";
 import { BusyLine, LoadingPanel, StepList, type Step } from "@/components/loading";
 import { SubBrandsPanel } from "@/components/sub-brands";
+import { ConfirmRemove } from "@/components/confirm-remove";
 import { BrandScopePicker } from "@/components/brand-scope";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -434,14 +435,10 @@ function SourcesAndGaps() {
                       >
                         Replace
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={!!busy}
-                        onClick={() => removeSource.mutate(source)}
-                      >
-                        Remove
-                      </Button>
+                      <ConfirmRemove
+                        disabled={!!busy || removeSource.isPending}
+                        onConfirm={() => removeSource.mutate(source)}
+                      />
                     </div>
                   </li>
                 ))}
